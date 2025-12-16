@@ -197,13 +197,20 @@ def index(request):
 
 
 
-count_app=100  
+count_app=100
 
 name=''
 def login_page(request):
   global count_app
-  print(type(request.POST))
   global name
+  global check
+
+  # Handle GET request - show login form
+  if request.method != 'POST':
+    return render(request, 'regis.html')
+
+  # Handle POST request - process login
+  print(type(request.POST))
   name=request.POST['t11']
   print(name)
   password=request.POST['t12']
@@ -211,9 +218,8 @@ def login_page(request):
   status=request.POST['web']
   if request.POST.__contains__('count_app'):
    count_app=request.POST['count_app']
-  
+
   query="select uname,email_id,user_type from user_list where(email_id='"+name+"' and upassword='"+password+"' and status='accepted')"
-  global check;
   try:
     cursor.execute(query)
     result=cursor.fetchall()

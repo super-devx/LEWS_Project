@@ -148,10 +148,10 @@ def fetch_info(request):
   ty=request.POST['val']
   num1 = request.POST.getlist('st')
   num2 = request.POST.getlist('loc')
-    
-  if len(num1)==0 or len(num2)==0: 
+
+  if len(num1)==0 or len(num2)==0:
     sensor,location=f1(name)
-    return render(request,'home.html',{'sensor':sensor,'location':location,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
+    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
   if 'all' in num2:
     query2="select node_id from node"
   else:
@@ -165,7 +165,7 @@ def fetch_info(request):
       node_id.append(col)
   query="select distinct(sensor_id) from sensor_info"
   if len(num1) !=0 and  'all' not in num1:
-    query=query+" where "+prepareQuery('sensor_type',num1) 
+    query=query+" where "+prepareQuery('sensor_type',num1)
     query=query+' and '
   if len(node_id) !=0:
     if "where" not in query:
@@ -174,21 +174,26 @@ def fetch_info(request):
             #query=query+' and '
   cursor.execute(query)
   node_records = cursor.fetchall()
-    
+
   sensor_id=[]
   for row in node_records:
     for col in row:
       sensor_id.append(col)
-          
+
   sensor_id_list=""
   count=1
   for row in sensor_id:
-    sensor_id_list=sensor_id_list+"<input type='checkbox' name='"
-    sensor_id_list=sensor_id_list+"sensor_list_id' value='"+row+"'>"+row.upper()+"<br>"
+    sensor_id_list=sensor_id_list+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
+    sensor_id_list=sensor_id_list+"<input class='custom-control-input' id='"+row+"' name='sensor_list_id' type='checkbox' value='"+row+"'>"
+    sensor_id_list=sensor_id_list+"<label class='cursor-pointer font-italic d-block custom-control-label' for='"+row+"'>"+row.upper()+"</label></div></li>"
   if ty=="app":
-    return render(request,'inter.html',{'sensor_id':sensor_id_list,'hidden_value':'app'})  
+    return render(request,'inter.html',{'sensor_id':sensor_id_list,'hidden_value':'app'})
 
-  return render(request,'inter.html',{'sensor_id':sensor_id_list,'hidden_value':'browser'})
+  return render(request,'sensor-data-selection.html',{
+    'sensor_id':sensor_id_list,
+    'hidden_value':'browser',
+    'user_name': name if name else 'User'
+  })
 
 
 def index(request):

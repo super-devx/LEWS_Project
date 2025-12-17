@@ -967,3 +967,105 @@
         font-size: 1.5rem;
     }
 }
+
+/* ===== TIME RANGE CARDS ===== */
+.time-range-card {
+    background: var(--sel-white);
+    border: 2px solid var(--sel-gray-200);
+    border-radius: var(--sel-radius-lg);
+    padding: var(--sel-space-xl);
+    transition: all var(--sel-transition-base);
+}
+
+.time-range-card:hover {
+    border-color: var(--sel-accent-300);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.1);
+}
+
+.time-range-label {
+    font-family: var(--sel-font-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--sel-gray-800);
+    margin-bottom: var(--sel-space-lg);
+    display: flex;
+    align-items: center;
+}
+
+.time-range-label i {
+    color: var(--sel-accent-500);
+}
+
+/* ===== FORM ELEMENTS ===== */
+.form-label {
+    font-family: var(--sel-font-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sel-gray-700);
+    margin-bottom: var(--sel-space-sm);
+    display: flex;
+    align-items: center;
+}
+
+.form-label i {
+    color: var(--sel-accent-500);
+    font-size: 0.875rem;
+}
+
+.form-control,
+.form-select {
+    font-family: var(--sel-font-secondary);
+    font-size: 0.95rem;
+    padding: 0.625rem 1rem;
+    border: 2px solid var(--sel-gray-200);
+    border-radius: var(--sel-radius-md);
+    background: var(--sel-white);
+    color: var(--sel-gray-800);
+    transition: all var(--sel-transition-base);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--sel-accent-500);
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+    outline: none;
+}
+
+.form-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ff6b35' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+
+input[type="date"].form-control {
+    position: relative;
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity var(--sel-transition-fast);
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Form Group Spacing */
+.form-group {
+    margin-bottom: var(--sel-space-lg);
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS FOR TIME RANGE ===== */
+@media (max-width: 767.98px) {
+    .time-range-card {
+        padding: var(--sel-space-lg);
+    }
+
+    .time-range-label {
+        font-size: 1rem;
+    }
+}
+

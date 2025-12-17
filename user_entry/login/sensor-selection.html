@@ -1,0 +1,237 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Select Sensors - LEWS Dashboard</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="selection-background">
+        <div class="bg-pattern"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="selection-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-mountain header-icon me-3"></i>
+                        <div>
+                            <h1 class="header-title mb-0">Landslide Early Warning System</h1>
+                            <p class="header-subtitle mb-0">Configure Your Monitoring Dashboard</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name">Welcome, {{ user_name|default:"User" }}</span>
+                        <a href="logout.html" class="btn-logout ms-3">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Indicator -->
+    <div class="container mt-4">
+        <div class="progress-steps">
+            <div class="step completed">
+                <div class="step-circle">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="step-label">Login</div>
+            </div>
+            <div class="step-line completed"></div>
+            <div class="step active">
+                <div class="step-circle">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <div class="step-label">Select Filters</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-circle">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="step-label">Dashboard</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Selection Container -->
+    <div class="container selection-container">
+        <div class="selection-card">
+            <form method="post" action="fetch_info" id="sensorSelectionForm">
+                {% csrf_token %}
+                <input type="hidden" value="browser" name="val">
+
+                <!-- Sensor Type Selection -->
+                <div class="selection-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-microchip me-2"></i>
+                            Sensor Types
+                        </h2>
+                        <p class="section-description">Select the types of sensors you want to monitor</p>
+                    </div>
+
+                    <div class="checkbox-grid">
+                        {% autoescape off %}
+                        {{ sensor }}
+                        {% endautoescape %}
+                    </div>
+                </div>
+
+                <!-- Location Selection -->
+                <div class="selection-section mt-5">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Monitoring Locations
+                        </h2>
+                        <p class="section-description">Choose the geographic locations to monitor</p>
+                    </div>
+
+                    <div class="location-grid">
+                        {% autoescape off %}
+                        {{ location }}
+                        {% endautoescape %}
+                    </div>
+                </div>
+
+                <!-- Selection Summary -->
+                <div class="selection-summary">
+                    <div class="summary-content">
+                        <i class="fas fa-check-circle summary-icon"></i>
+                        <span class="summary-text">
+                            <strong id="selected-count">0</strong> sensor(s) and <strong id="selected-locations">0</strong> location(s) selected
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-action btn-primary">
+                        <i class="fas fa-check-circle me-2"></i>Submit Selection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="selection-footer">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-shield-alt me-2"></i>
+                Landslide Early Warning System &copy; 2025 | Secure Monitoring Platform
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        $(document).ready(function() {
+            // Update selection count
+            function updateSelectionCount() {
+                const sensorCount = $('input[name="st"]:checked').length;
+                const locationCount = $('input[name="loc"]:checked').length;
+
+                $('#selected-count').text(sensorCount);
+                $('#selected-locations').text(locationCount);
+            }
+
+            // Handle "All Sensors" checkbox
+            $('#allsen').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('input[name="st"]').not('#allsen').prop('checked', false);
+                }
+                updateSelectionCount();
+            });
+
+            // Uncheck "All Sensors" when individual sensor is selected
+            $('input[name="st"]').not('#allsen').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#allsen').prop('checked', false);
+                }
+                updateSelectionCount();
+            });
+
+            // Handle "All Locations" checkbox
+            $('#allloc').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('input[name="loc"]').not('#allloc').prop('checked', false);
+                }
+                updateSelectionCount();
+            });
+
+            // Uncheck "All Locations" when individual location is selected
+            $('input[name="loc"]').not('#allloc').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#allloc').prop('checked', false);
+                }
+                updateSelectionCount();
+            });
+
+            // Form validation
+            $('#sensorSelectionForm').on('submit', function(e) {
+                const sensorSelected = $('input[name="st"]:checked').length > 0;
+                const locationSelected = $('input[name="loc"]:checked').length > 0;
+
+                if (!sensorSelected || !locationSelected) {
+                    e.preventDefault();
+
+                    // Show error message
+                    let errorMsg = 'Please select at least:\n';
+                    if (!sensorSelected) errorMsg += '- One sensor type\n';
+                    if (!locationSelected) errorMsg += '- One location\n';
+
+                    alert(errorMsg);
+                    return false;
+                }
+            });
+
+            // Update count when checkboxes change
+            $('input[name="st"], input[name="loc"]').on('change', updateSelectionCount);
+
+            // Initialize count
+            updateSelectionCount();
+
+            // Add animation on list item click
+            $('.list-group-item').on('click', function() {
+                $(this).addClass('card-clicked');
+                setTimeout(() => {
+                    $(this).removeClass('card-clicked');
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>

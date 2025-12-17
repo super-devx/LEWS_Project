@@ -271,9 +271,9 @@ def home(request,web="app",amessage=''):
     print('in home',web)
     if check != "credit":
       if web=="app":
-        return HttpResponse("credidentals are not correct"); 
+        return HttpResponse("credidentals are not correct");
       else:
-       return render(request,'home.html',{'message':"YOU ARE NOT A VALID USER"})
+       return render(request,'sensor-selection.html',{'message':"YOU ARE NOT A VALID USER"})
     else:
        sensor,location=f1(name)
        check=""
@@ -284,11 +284,16 @@ def home(request,web="app",amessage=''):
          return render(request,'check.html',{'sensor':sensor,'location':location})
        else:
         print('new DATA',amessage)
-        return render(request,'home.html',{'sensor':sensor,'location':location,'admin_message':amessage})
+        return render(request,'sensor-selection.html',{
+          'sensor':sensor,
+          'location':location,
+          'user_name': name if name else 'User',
+          'admin_message':amessage
+        })
   except Exception as e:
     print('I AM IN EXCEPT',e)
     if web=="app":
-      return HttpResponse("YOU ARE NOT A VALID USER.."); 
+      return HttpResponse("YOU ARE NOT A VALID USER..");
     else:
        return render(request,'login',{'message':"YOU ARE NOT A VALID USER......."})
 

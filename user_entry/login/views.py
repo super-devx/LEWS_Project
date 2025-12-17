@@ -192,7 +192,13 @@ def fetch_info(request):
 
 
 def index(request):
-  return render(request,'regis.html')
+  return render(request,'index.html')
+
+def login_form(request):
+  return render(request,'login.html')
+
+def register_form(request):
+  return render(request,'register.html')
 
 
 

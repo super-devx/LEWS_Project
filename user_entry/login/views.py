@@ -586,7 +586,13 @@ def secondPartNew(request):
       pass
     plt.tight_layout()
     chart = get_graph(figure)
-    return render(request, 'results.html', {'chart': chart})
+    from datetime import datetime
+    now = datetime.now()
+    return render(request, 'data-visualization.html', {
+      'chart': chart,
+      'current_date': now.strftime('%B %d, %Y'),
+      'current_time': now.strftime('%I:%M %p')
+    })
   
 
         

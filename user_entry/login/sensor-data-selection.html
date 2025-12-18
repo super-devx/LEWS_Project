@@ -26,7 +26,7 @@
     </div>
 
     <!-- Header -->
-    <header class="selection-header">
+    <header class="viz-header">
         <div class="container-fluid">
             <div class="row align-items-center">
                 <div class="col-md-6">
@@ -34,17 +34,16 @@
                         <i class="fas fa-mountain header-icon me-3"></i>
                         <div>
                             <h1 class="header-title mb-0">Landslide Early Warning System</h1>
-                            <p class="header-subtitle mb-0">Configure Data Visualization</p>
+                            <p class="header-subtitle mb-0">Sensor Data Visualization</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <span class="user-name">Welcome, {{ user_name|default:"User" }}</span>
-                        <a href="logout.html" class="btn-logout ms-3">
+                    <div class="header-actions">
+                        <a href="{% url 'home' %}" class="btn-header-action">
+                            <i class="fas fa-arrow-left me-2"></i>New Query
+                        </a>
+                        <a href="logout.html" class="btn-header-action btn-logout">
                             <i class="fas fa-sign-out-alt me-2"></i>Logout
                         </a>
                     </div>
@@ -301,12 +300,26 @@
     </div>
 
     <!-- Footer -->
-    <footer class="selection-footer">
+    <footer class="viz-footer">
         <div class="container">
-            <p class="mb-0">
-                <i class="fas fa-shield-alt me-2"></i>
-                Landslide Early Warning System &copy; 2025 | Secure Monitoring Platform
-            </p>
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="{% url 'download' %}" class="footer-link">Request Dataset</a>
+                    <span class="separator">|</span>
+                    <a href="contact.html" class="footer-link">Our Mission</a>
+                    <span class="separator">|</span>
+                    <a href="contact.html" class="footer-link">Contact Us</a>
+                    <span class="separator">|</span>
+                    <a href="about.html" class="footer-link">About Us</a>
+                </div>
+                <div class="footer-info-text">
+                    <p>This website has been designed for monitoring sensor data of NMHS</p>
+                    <p>Joint Collaborative Development of CSIR-CBRI and IIT-Roorkee | Funded by NMHS</p>
+                </div>
+                <div class="footer-copyright">
+                    Landslide Early Warning System &copy; 2025 | Secure Monitoring Platform
+                </div>
+            </div>
         </div>
     </footer>
 

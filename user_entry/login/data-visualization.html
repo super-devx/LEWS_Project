@@ -17,43 +17,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/data-visualization-style.css' %}">
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="viz-background">
-        <div class="bg-pattern"></div>
-    </div>
-
-    <!-- Header -->
-    <header class="viz-header">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-mountain header-icon me-3"></i>
-                        <div>
-                            <h1 class="header-title mb-0">Landslide Early Warning System</h1>
-                            <p class="header-subtitle mb-0">Sensor Data Visualization</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                    <div class="header-actions">
-                        <a href="{% url 'home' %}" class="btn-header-action">
-                            <i class="fas fa-arrow-left me-2"></i>New Query
-                        </a>
-                        <a href="logout.html" class="btn-header-action btn-logout">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    <!-- Navigation -->
+    {% include 'navbar-include.html' %}
 
     <!-- Main Content -->
-    <div class="container viz-container">
+    <main id="main-content">
+        <!-- Animated Background -->
+        <div class="viz-background">
+            <div class="bg-pattern"></div>
+        </div>
+
+        <div class="container viz-container">
         <!-- Success Banner -->
         <div class="success-banner">
             <div class="banner-icon">
@@ -158,37 +138,19 @@
             </div>
         </div>
     </div>
+    </main>
 
     <!-- Footer -->
-    <footer class="viz-footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-links">
-                    <a href="{% url 'download' %}" class="footer-link">Request Dataset</a>
-                    <span class="separator">|</span>
-                    <a href="contact.html" class="footer-link">Our Mission</a>
-                    <span class="separator">|</span>
-                    <a href="contact.html" class="footer-link">Contact Us</a>
-                    <span class="separator">|</span>
-                    <a href="about.html" class="footer-link">About Us</a>
-                </div>
-                <div class="footer-info-text">
-                    <p>This website has been designed for monitoring sensor data of NMHS</p>
-                    <p>Joint Collaborative Development of CSIR-CBRI and IIT-Roorkee | Funded by NMHS</p>
-                </div>
-                <div class="footer-copyright">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    Landslide Early Warning System &copy; 2025 | Secure Monitoring Platform
-                </div>
-            </div>
-        </div>
-    </footer>
+    {% include 'footer-include.html' %}
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Navigation JS -->
+    <script src="{% static 'js/nav.js' %}"></script>
 
     <!-- Custom JavaScript -->
     <script>

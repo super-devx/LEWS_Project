@@ -7,7 +7,7 @@
     <div class="nav-container">
         <!-- Logo and Branding -->
         <div class="nav-brand">
-            <a href="{% url 'home' %}" class="brand-link">
+            <a href="{% if user_name %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}" class="brand-link">
                 <i class="fas fa-mountain brand-icon"></i>
                 <div class="brand-text">
                     <span class="brand-title">LEWS</span>
@@ -28,7 +28,7 @@
             <ul class="nav-links">
                 <!-- Home -->
                 <li class="nav-item">
-                    <a href="{% url 'home' %}" class="nav-link" data-page="home">
+                    <a href="{% if user_name %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}" class="nav-link" data-page="home">
                         <i class="fas fa-home nav-icon"></i>
                         <span>Home</span>
                     </a>
@@ -76,7 +76,7 @@
                                 </h3>
                                 <ul class="mega-menu-list">
                                     <li>
-                                        <a href="#" class="mega-menu-link">
+                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
                                             <i class="fas fa-chart-area"></i>
                                             <div>
                                                 <strong>Time Series</strong>
@@ -85,7 +85,7 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="#" class="mega-menu-link">
+                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
                                             <i class="fas fa-chart-pie"></i>
                                             <div>
                                                 <strong>Statistical Analysis</strong>
@@ -102,7 +102,7 @@
                                 </h3>
                                 <ul class="mega-menu-list">
                                     <li>
-                                        <a href="#" class="mega-menu-link">
+                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
                                             <i class="fas fa-exclamation-triangle"></i>
                                             <div>
                                                 <strong>Active Warnings</strong>
@@ -111,7 +111,7 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="#" class="mega-menu-link">
+                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
                                             <i class="fas fa-history"></i>
                                             <div>
                                                 <strong>Alert History</strong>
@@ -135,7 +135,7 @@
 
                 <!-- About -->
                 <li class="nav-item">
-                    <a href="about.html" class="nav-link" data-page="about">
+                    <a href="{% url 'about' %}" class="nav-link" data-page="about">
                         <i class="fas fa-info-circle nav-icon"></i>
                         <span>About</span>
                     </a>
@@ -143,7 +143,7 @@
 
                 <!-- Contact -->
                 <li class="nav-item">
-                    <a href="contact.html" class="nav-link" data-page="contact">
+                    <a href="{% url 'contact' %}" class="nav-link" data-page="contact">
                         <i class="fas fa-envelope nav-icon"></i>
                         <span>Contact</span>
                     </a>

@@ -197,7 +197,10 @@ def fetch_info(request):
 
 
 def index(request):
-  return render(request,'index.html')
+  # Landing page - check if user is logged in
+  global check, name
+  context = {'user_name': name if check == "credit" else None}
+  return render(request,'index.html', context)
 
 def login_form(request):
   return render(request,'login.html')
@@ -275,10 +278,9 @@ def home(request,web="app",amessage=''):
     global check
     print('in home',web)
     if check != "credit":
-      if web=="app":
-        return HttpResponse("credidentals are not correct");
-      else:
-       return render(request,'sensor-selection.html',{'message':"YOU ARE NOT A VALID USER"})
+      # If not logged in, redirect to login page
+      from django.shortcuts import redirect
+      return redirect('signin')
     else:
        sensor,location=f1(name)
        check=""
@@ -824,8 +826,37 @@ def registration(request):
       return render(request,'regis.html',{'message':fmessage})
      
 
-  
-  
+
+
   #return HttpResponse("DATA HAS BEEN NOT SUBMITTED");
-    
+
+
+# New view functions for additional pages
+def about(request):
+    """Render the About Us page"""
+    # Check if user is logged in by checking the global check variable
+    global check, name
+    context = {'user_name': name if check == "credit" else None}
+    return render(request, 'about.html', context)
+
+def mission(request):
+    """Render the Mission page"""
+    # Check if user is logged in by checking the global check variable
+    global check, name
+    context = {'user_name': name if check == "credit" else None}
+    return render(request, 'mission.html', context)
+
+def contact(request):
+    """Render the Contact page"""
+    # Check if user is logged in by checking the global check variable
+    global check, name
+    context = {'user_name': name if check == "credit" else None}
+    return render(request, 'contact.html', context)
+
+def coming_soon(request):
+    """Render the Coming Soon page"""
+    # Check if user is logged in by checking the global check variable
+    global check, name
+    context = {'user_name': name if check == "credit" else None}
+    return render(request, 'coming-soon.html', context)
 

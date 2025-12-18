@@ -17,8 +17,13 @@ urlpatterns = [
     path('check',views.fetch_info, name=''),
     path('download/',views.download, name = 'download'),
     #path('data.csv',views.downfile, name = 'down'),
-    path('allow.html',views.allow, name=''),	
+    path('allow.html',views.allow, name=''),
     path('insert',views.insert, name=''),
-    path('logout.html',views.logout, name=''),	
+    path('logout.html',views.logout, name=''),
+    # New pages
+    path('about', views.about, name='about'),
+    path('mission', views.mission, name='mission'),
+    path('contact', views.contact, name='contact'),
+    path('coming-soon', views.coming_soon, name='coming_soon'),
     url(r'^activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',views.activate, name='activate'),
 ]

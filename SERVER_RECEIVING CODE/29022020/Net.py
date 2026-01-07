@@ -16,7 +16,7 @@ server.setblocking(0)
 # Bind the socket to the port
 server_address = ('localhost', 5000)
 # server_address = ('10.13.1.211', 5000)
-server_address = ('192.168.104.84', 5000)
+# server_address = ('192.168.104.84', 5000)
 server.bind(server_address)
 
 # Listen for incoming connections

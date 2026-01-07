@@ -32,18 +32,18 @@ class ContentFromClient:
     connection.close()
     
     
-  def get_node_id(self,cname,name):
+  def get_node_id(self,cname,name,tenantId):
     try:
       #print(ContentFromClient.a)
-      query="select node_id from node where name='"+name+"' and location='"+cname+"'"
+      query="SELECT node_id FROM node WHERE name=%s AND location=%s AND tenant_id=%s"
       cursor=ContentFromClient.cursor
       #print(query)
-      cursor.execute(query)
+      cursor.execute(query,(name,cname,tenantId))
       node_records = cursor.fetchall()
       node_id=node_records[0][0]
       #print('here',node_id)
       return node_id
-      
+
     except Exception as e:
       print("PROBLEM IN FETCH node ID",e)
       return None
@@ -51,8 +51,14 @@ class ContentFromClient:
   def getTotalNodes():
     for i in content:
       pass
-      
-      
+
+
+  def  getTenantId(self):
+    indexofname=self.content.find('@')
+    tenantId=self.content[0:indexofname]
+    self.content=self.content[indexofname+1:]
+    return tenantId
+
   def  getlocationName(self):
     indexofname=self.content.find('@')
     name=self.content[0:indexofname]
@@ -75,11 +81,14 @@ class ContentFromClient:
       
   def sensorvalues(self):
     all1=[]
+    tenantId=self.getTenantId()
+    print('tenant id is'+tenantId)
+    
     temp=self.getlocationName()
     coordinator_name=self.getCordinatorName()
     node_name=self.getNodeName()
-    
-    node_id=self.get_node_id(coordinator_name,node_name)
+
+    node_id=self.get_node_id(coordinator_name,node_name,tenantId)
     if node_id == None:
       print('cant insert ')
       return;
@@ -165,11 +174,11 @@ class ContentFromClient:
         if(float(value)>=2000):
           Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','PITCH VALUE IS CROSSING THRESOLD '+value)  
       s5=datetime.now()
-      
+
       try:
-        postgres_insert_query = 'INSERT INTO sensor_data (sensor_id,sensor_value,receive_time) VALUES (%s,%s,%s)'
-        record_to_insert = (id,value,s5)
-        print('pair is',id,value,s5)
+        postgres_insert_query = 'INSERT INTO sensor_data (sensor_id,sensor_value,receive_time,tenant_id) VALUES (%s,%s,%s,%s)'
+        record_to_insert = (id,value,s5,tenantId)
+        print('pair is',id,value,s5,tenantId)
         print("id is")
         if value=="nan" or id==None:
           print("YES")
@@ -191,13 +200,17 @@ class ContentFromClient:
 
 if __name__ == "__main__":
   print('hi')
-  c=ContentFromClient("c1@netala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
-  #c=ContentFromClient("c1@tangni@n1(moisture1:39.99)(pitch1:-4)(roll1:-17)(pitch2:1)(roll2:-36)(pitch3:0)(roll3:-64)(pitch4:5)(roll4:-85)")
-  #c=ContentFromClient("c1@tangni@n4(moisture1:52.75)(pressure:nan)")
-  c=ContentFromClient("&c1@netala@n2(moisture1:55.69)(voltage1:3.41)(vols1:2118.00)")
+  # Test with tenant_id format: tenantId@location@coordinator@node(sensor:value)...
+  # Old format (3 parts): c1@netala@n1(...)
+  # New format (4 parts): default@c1@netala@n1(...)
 
-  
-  
+  c=ContentFromClient("default@c1@netala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
+  #c=ContentFromClient("default@c1@tangni@n1(moisture1:39.99)(pitch1:-4)(roll1:-17)(pitch2:1)(roll2:-36)(pitch3:0)(roll3:-64)(pitch4:5)(roll4:-85)")
+  #c=ContentFromClient("default@c1@tangni@n4(moisture1:52.75)(pressure:nan)")
+  #c=ContentFromClient("default@c1@netala@n2(moisture1:55.69)(voltage1:3.41)(vols1:2118.00)")
+
+
+
   c.sensorvalues()
   print('DONE')
   #pass

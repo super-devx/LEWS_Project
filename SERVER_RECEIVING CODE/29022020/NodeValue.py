@@ -202,12 +202,13 @@ if __name__ == "__main__":
   print('hi')
   # Test with tenant_id format: tenantId@location@coordinator@node(sensor:value)...
   # Old format (3 parts): c1@netala@n1(...)
-  # New format (4 parts): default@c1@netala@n1(...)
+  # New format (4 parts with INTEGER tenant_id): 1@c1@netala@n1(...)
+  # NOTE: tenant_id is now INTEGER (1, 2, 3...), not string!
 
-  c=ContentFromClient("default@c1@netala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
-  #c=ContentFromClient("default@c1@tangni@n1(moisture1:39.99)(pitch1:-4)(roll1:-17)(pitch2:1)(roll2:-36)(pitch3:0)(roll3:-64)(pitch4:5)(roll4:-85)")
-  #c=ContentFromClient("default@c1@tangni@n4(moisture1:52.75)(pressure:nan)")
-  #c=ContentFromClient("default@c1@netala@n2(moisture1:55.69)(voltage1:3.41)(vols1:2118.00)")
+  c=ContentFromClient("1@c1@netala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
+  #c=ContentFromClient("1@c1@tangni@n1(moisture1:39.99)(pitch1:-4)(roll1:-17)(pitch2:1)(roll2:-36)(pitch3:0)(roll3:-64)(pitch4:5)(roll4:-85)")
+  #c=ContentFromClient("1@c1@tangni@n4(moisture1:52.75)(pressure:nan)")
+  #c=ContentFromClient("1@c1@netala@n2(moisture1:55.69)(voltage1:3.41)(vols1:2118.00)")
 
 
 

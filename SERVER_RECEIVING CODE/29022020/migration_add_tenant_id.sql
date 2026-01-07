@@ -4,6 +4,7 @@
 -- Purpose: Add tenant_id support to enable multi-tenant architecture
 -- Date: 2026-01-07
 -- Database: netala_database (PostgreSQL)
+-- Python Version: 3.9.13
 --
 -- IMPORTANT: Backup your database before running this script!
 -- Command: pg_dump -U postgres -d netala_database > backup_$(date +%Y%m%d).sql
@@ -125,14 +126,15 @@ END $$;
 
 -- user_list: (tenant_id, email_id) composite unique
 ALTER TABLE user_list
-DROP CONSTRAINT IF EXISTS user_list_pkey CASCADE,
-ADD CONSTRAINT user_list_pkey PRIMARY KEY (tenant_id, email_id);
+DROP CONSTRAINT IF EXISTS email_id_primary_key CASCADE,
+ADD CONSTRAINT email_id_primary_key PRIMARY KEY (tenant_id, email_id);
 
-COMMENT ON CONSTRAINT user_list_pkey ON user_list IS 'Composite PK: email_id unique per tenant';
+COMMENT ON CONSTRAINT email_id_primary_key ON user_list IS 'Composite PK: email_id unique per tenant';
 
 -- node: Keep existing node_id as PK (already globally unique)
 -- Add unique constraint for tenant scope
 ALTER TABLE node
+DROP CONSTRAINT IF EXISTS node_pkey CASCADE,
 ADD CONSTRAINT uq_node_tenant_nodeid UNIQUE (tenant_id, node_id);
 
 COMMENT ON CONSTRAINT uq_node_tenant_nodeid ON node IS 'Ensures node_id is unique within tenant scope';
@@ -148,7 +150,7 @@ COMMENT ON CONSTRAINT sensor_info_pkey ON sensor_info IS 'Composite PK: sensor_i
 -- Note: sensor_data already has unique constraint on (sensor_id, receive_time)
 -- We need to update it to include tenant_id
 ALTER TABLE sensor_data
-DROP CONSTRAINT IF EXISTS sensor_data_sensor_receive_time_key CASCADE,
+DROP CONSTRAINT IF EXISTS sensor_data_pkey CASCADE,
 ADD CONSTRAINT uq_sensor_data_tenant_sensor_time UNIQUE (tenant_id, sensor_id, receive_time);
 
 COMMENT ON CONSTRAINT uq_sensor_data_tenant_sensor_time ON sensor_data IS 'Composite unique: one reading per sensor per timestamp per tenant';
@@ -165,6 +167,7 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'u_status') THEN
         ALTER TABLE u_status
+        DROP CONSTRAINT IF EXISTS u_status_pkey CASCADE,
         ADD CONSTRAINT uq_u_status_tenant_email_location UNIQUE (tenant_id, email_id, location);
     END IF;
 END $$;

@@ -64,8 +64,10 @@ def unique(list1):
 
 
 def logout(request):
-  check=''
-  return render(request,'regis.html',{'message':"YOU HAVE SUCCESSFULLY LOGOUT"})
+  global check, name
+  check = ''
+  name = ''
+  return redirect('landing')
   
 
 #23.10.2020

@@ -19,7 +19,7 @@ urlpatterns = [
     #path('data.csv',views.downfile, name = 'down'),
     path('allow.html',views.allow, name=''),
     path('insert',views.insert, name=''),
-    path('logout.html',views.logout, name=''),
+    path('logout.html',views.logout, name='logout_legacy'),
     # New pages
     path('about', views.about, name='about'),
     path('mission', views.mission, name='mission'),

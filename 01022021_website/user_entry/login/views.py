@@ -301,13 +301,12 @@ def login_page(request):
           count_app=10
           print(result[0][0]+"#"+result[0][1]+"#"+sensor+"#"+location)
           return HttpResponse(result[0][0]+"#"+result[0][1]+"#"+sensor+"#"+location);
-           
+
         else:
-          return home(request,status)
+          return redirect('home')
       else:
-        if result[0][2]=='SUPERVISOR':
-          return home(request,status,'<a href=allow.html>ALLOW USERS</a>')  
-        return home(request,status)
+        # Redirect to home page (PRG pattern) instead of calling home() directly
+        return redirect('home')
     else:
       if status =="app":
         return HttpResponse("credidentals is not correct");     
@@ -327,13 +326,16 @@ check=""
 
 
 @no_cache
-def home(request,web="app",amessage=''):
+def home(request,web=None,amessage=''):
   try:
     global check
+    # Determine if request is from app or web browser
+    # If web parameter not provided, check if it's a GET request (browser redirect)
+    if web is None:
+      web = "web" if request.method == "GET" else "app"
     print('in home',web)
     if check != "credit":
       # If not logged in, redirect to login page
-      from django.shortcuts import redirect
       return redirect('signin')
     else:
        sensor,location=f1(name)

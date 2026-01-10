@@ -36,7 +36,21 @@ import pandas as pd
 
 
 from datetime import datetime
+from functools import wraps
+
 matplotlib.use('Agg')
+
+
+# Decorator to prevent browser caching of authenticated pages
+def no_cache(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        response = view_func(request, *args, **kwargs)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+    return wrapper
 
 class TokenGenerator(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
@@ -144,6 +158,7 @@ def insert(request):
   
   
 
+@no_cache
 def fetch_info(request):
   num1=[]
   num2=[]
@@ -311,6 +326,7 @@ def login_page(request):
 check=""
 
 
+@no_cache
 def home(request,web="app",amessage=''):
   try:
     global check
@@ -321,7 +337,6 @@ def home(request,web="app",amessage=''):
       return redirect('signin')
     else:
        sensor,location=f1(name)
-       check=""
        print('i have come here ')
        print(sensor,location)
        if web=="app":
@@ -534,6 +549,7 @@ def firstPart(request):
 
 
 
+@no_cache
 def secondPartNew(request):
   Dict = {}
   Labels = {}

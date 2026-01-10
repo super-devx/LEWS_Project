@@ -152,27 +152,63 @@ def fetch_info(request):
   if len(num1)==0 or len(num2)==0:
     sensor,location=f1(name)
     return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
-  if 'all' in num2:
-    query2="select node_id from node"
+
+  # Get user's tenant_id from user_list table
+  tenant_query = "SELECT tenant_id FROM user_list WHERE email_id = %s"
+  cursor.execute(tenant_query, (name,))
+  tenant_result = cursor.fetchone()
+  tenant_id = tenant_result[0] if tenant_result else None
+
+  # Get user's allowed node_ids based on u_status table (location-based access control)
+  allowed_nodes_query = """
+    SELECT DISTINCT node.node_id FROM node
+    INNER JOIN u_status ON node.location = u_status.location
+    WHERE u_status.email_id = %s
+  """
+  if tenant_id:
+    allowed_nodes_query += " AND node.tenant_id = %s"
+    cursor.execute(allowed_nodes_query, (name, tenant_id))
   else:
-    query2="select node_id from node where "
-    query2=query2+prepareQuery('node.node_id',num2)
-  cursor.execute(query2)
-  node_records = cursor.fetchall()
-  node_id=[]
-  for row in node_records:
-    for col in row:
-      node_id.append(col)
-  query="select distinct(sensor_id) from sensor_info"
-  if len(num1) !=0 and  'all' not in num1:
-    query=query+" where "+prepareQuery('sensor_type',num1)
-    query=query+' and '
-  if len(node_id) !=0:
-    if "where" not in query:
-      query=query+" where "
-    query=query+prepareQuery('sensor_info.node_id',node_id)
-            #query=query+' and '
-  cursor.execute(query)
+    cursor.execute(allowed_nodes_query, (name,))
+  allowed_nodes_result = cursor.fetchall()
+  allowed_node_ids = [row[0] for row in allowed_nodes_result]
+
+  # If user selected 'all' locations, use all their allowed nodes
+  if 'all' in num2:
+    node_id = allowed_node_ids
+  else:
+    # Filter selected nodes to only include those the user has access to
+    node_id = [n for n in num2 if n in allowed_node_ids]
+
+  # If no valid nodes after filtering, show error
+  if len(node_id) == 0:
+    sensor,location=f1(name)
+    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>NO VALID LOCATIONS SELECTED </font>"})
+
+  # Build query for sensors filtered by tenant_id and allowed node_ids
+  query = "SELECT DISTINCT sensor_id FROM sensor_info WHERE "
+  conditions = []
+  params = []
+
+  # Filter by tenant_id
+  if tenant_id:
+    conditions.append("tenant_id = %s")
+    params.append(tenant_id)
+
+  # Filter by sensor type if not 'all'
+  if len(num1) != 0 and 'all' not in num1:
+    type_placeholders = ','.join(['%s'] * len(num1))
+    conditions.append("sensor_type IN (" + type_placeholders + ")")
+    params.extend(num1)
+
+  # Filter by allowed node_ids
+  if len(node_id) != 0:
+    node_placeholders = ','.join(['%s'] * len(node_id))
+    conditions.append("node_id IN (" + node_placeholders + ")")
+    params.extend(node_id)
+
+  query += " AND ".join(conditions)
+  cursor.execute(query, params)
   node_records = cursor.fetchall()
 
   sensor_id=[]

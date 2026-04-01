@@ -8,18 +8,18 @@ import Send_sms
 class ContentFromClient:
   #time_th=21600
   time_th=1800
-  initial=[True,True,True,True]
-  temp_pressure=[[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200]] # This is four node and five sensor in every node
-  temp_roll=[[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200]]
-  temp_pitch=[[45.2,45.2,45.2,42.2,42.2,42.2,42.2],[45.2,45.2,45.2,45.2,45.2,45.2,45.2],[45.2,45.2,45.2,45.2,45.2,45.2,45.2],[45.2,45.2,45.2,45.2,45.2,45.2,45.2]] # pitch is a special case in which a list represent similar pitch like p1 p1 p1 p1
-  temp_moisture=[50,50,50,50,50,50,50]
-  flag=[False,False,False,False]
+  initial=[True,True,True,True,True,True,True,True,True,True]
+  temp_pressure=[[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200],[200,200,200,200,200]] # This is four node and five sensor in every node
+  temp_roll=[[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200],[1200,1200,1200,1200]]
+  temp_pitch=[[45.2,45.2,45.2,42.2,42.2,42.2,42.2,42.2,42.2,42.2],[45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2],[45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2],[45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2,45.2]] # pitch is a special case in which a list represent similar pitch like p1 p1 p1 p1
+  temp_moisture=[50,50,50,50,50,50,50,50,50,50]
+  flag=[False,False,False,False,False,False,False,False,False,False]
   demo_min=52
   demo_max=39
-  m_min=[46,56,43,52,demo_min,demo_min]
-  m_max=[34,41,39,39,demo_max,demo_max]
+  m_min=[46,56,43,52,demo_min,demo_min,demo_min,demo_min,demo_min,demo_min]
+  m_max=[34,41,39,39,demo_max,demo_max,demo_max,demo_max,demo_max,demo_max]
   #r=[[],[],[],[],[],[],[]]
-  temp_date=[datetime.now(),datetime.now(),datetime.now(),datetime.now()]
+  temp_date=[datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now()]
   def __init__(self,content):
     self.content=content.lower()
     print(content)
@@ -73,7 +73,13 @@ class ContentFromClient:
       if node_name=='n6':
         index_node=5
       if node_name=='n7':
-        index_node=6  
+        index_node=6
+      if node_name=='n8':
+        index_node=7
+      if node_name=='n9':
+        index_node=8
+      if node_name=='n10':
+        index_node=9
       difference=(now-ContentFromClient.temp_date[index_node]).total_seconds()   
       sms='Possibility of landsliding at '+coordinator_name+' , '+node_name+' at '+now.strftime("%m/%d/%Y, %H:%M:%S")+' . Sensors Values are:' 
            

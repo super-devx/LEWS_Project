@@ -73,7 +73,7 @@ def opendatabase():
 connection,cursor=opendatabase()
   
 def unique(list1):
-  x = np.array(list1) 
+  x = np.array(list1)
   return np.unique(x).tolist() 
 
 

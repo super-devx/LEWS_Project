@@ -37,7 +37,7 @@ class ContentFromClient:
       #print(ContentFromClient.a)
       query="SELECT node_id FROM node WHERE name=%s AND location=%s AND tenant_id=%s"
       cursor=ContentFromClient.cursor
-      #print(query)
+      print(name,cname,tenantId)
       cursor.execute(query,(name,cname,tenantId))
       node_records = cursor.fetchall()
       node_id=node_records[0][0]
@@ -54,10 +54,11 @@ class ContentFromClient:
 
 
   def  getTenantId(self):
-    indexofname=self.content.find('@')
-    tenantId=self.content[0:indexofname]
-    self.content=self.content[indexofname+1:]
-    return tenantId
+    #indexofname=self.content.find('@')
+    #tenantId=self.content[0:indexofname]
+    #self.content=self.content[indexofname+1:]
+
+    return "2"
 
   def  getlocationName(self):
     indexofname=self.content.find('@')
@@ -205,7 +206,7 @@ if __name__ == "__main__":
   # New format (4 parts with INTEGER tenant_id): 1@c1@netala@n1(...)
   # NOTE: tenant_id is now INTEGER (1, 2, 3...), not string!
 
-  c=ContentFromClient("1@c1@netala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
+  c=ContentFromClient("2@c1@kerala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
   #c=ContentFromClient("1@c1@tangni@n1(moisture1:39.99)(pitch1:-4)(roll1:-17)(pitch2:1)(roll2:-36)(pitch3:0)(roll3:-64)(pitch4:5)(roll4:-85)")
   #c=ContentFromClient("1@c1@tangni@n4(moisture1:52.75)(pressure:nan)")
   #c=ContentFromClient("1@c1@netala@n2(moisture1:55.69)(voltage1:3.41)(vols1:2118.00)")

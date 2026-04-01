@@ -21,7 +21,7 @@ server.bind(server_address)
 
 # Listen for incoming connections
 
-server.listen(5)
+server.listen(10)
 
 inputs = [server]
 outputs = []
@@ -29,7 +29,7 @@ outputs = []
 message_queues = {}
 print('waiting for request')
 while inputs:
-    readable, writable, exceptional = select.select(inputs, outputs, inputs, 0)
+    readable, writable, exceptional = select.select(inputs, outputs, inputs, 1)
     for s in readable:
         if s is server:
             connection, client_address = s.accept()
@@ -43,23 +43,24 @@ while inputs:
 
                 if data:
                     print('DATA RECEIVED')
-                    f = open('A.txt', 'a+')
+                    # f = open('A.txt', 'a+')
                     process_data = data.decode('utf-8').lower()
                     print(process_data)
                     print(len(process_data))
                     if process_data.startswith("get"):
-                        continue;
+                        continue
                     c = NodeValue.ContentFromClient(process_data)
                     c.sensorvalues()
                     # f.write(process_data)
 
-                    now = datetime.now()
-                    f.write('%s' % now)
-                    f.write("\r\n")
-                    f.write(process_data)
+                    with open('A.txt', 'a+') as f:
+                        now = datetime.now()
+                        f.write('%s' % now)
+                        f.write("\r\n")
+                        f.write(process_data)
 
-                    if process_data[len(process_data) - 1] == ')':
-                        f.write('\n')
+                        if process_data[len(process_data) - 1] == ')':
+                            f.write('\n')
                     f.close()
                     print('WRITTEN IN DATA')
                     print("")
@@ -77,6 +78,7 @@ while inputs:
                 print('in', e)
                 if s in inputs:
                     inputs.remove(s)
+                s.close()
 
     for s in exceptional:
         print('i am in exceptional')

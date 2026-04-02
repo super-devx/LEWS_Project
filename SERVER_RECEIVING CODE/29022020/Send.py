@@ -18,4 +18,4 @@ def send_msg(sender, receiver, message):
     #server.send_message(msg)
     #server.quit()
   except Exception as e:
-    print('Email send failed: %s' % e)
+    print('Email send failed: %s' % e, flush=True)

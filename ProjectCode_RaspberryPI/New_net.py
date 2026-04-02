@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 import sys
+# Force line-buffered stdout so logs appear immediately even when
+# running via nohup, systemd, or redirected to a file
+sys.stdout.reconfigure(line_buffering=True)
 import time
 import os
 import select

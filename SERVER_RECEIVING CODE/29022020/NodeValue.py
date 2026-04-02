@@ -16,6 +16,14 @@ DB_NAME = "netala_database"
 
 # Thread lock for database access since Net.py now processes data in worker threads
 _db_lock = threading.Lock()
+# Thread lock for print calls to prevent interleaved/garbled output across threads
+_print_lock = threading.Lock()
+
+
+def _log(msg):
+  """Thread-safe log for NodeValue."""
+  with _print_lock:
+    print('[%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), msg), flush=True)
 
 
 def _open_database():
@@ -24,7 +32,7 @@ def _open_database():
     cursor = connection.cursor()
     return connection, cursor
   except Exception as e:
-    print("[ERROR] DB connection failed: %s" % e, flush=True)
+    _log("[ERROR] DB connection failed: %s" % e)
     return None, None
 
 
@@ -61,7 +69,7 @@ class ContentFromClient:
       node_id = node_records[0][0]
       return node_id
     except Exception as e:
-      print("[ERROR] Node ID lookup failed: %s" % e, flush=True)
+      _log("[ERROR] Node ID lookup failed: %s" % e)
       return None
 
   def getTotalNodes():
@@ -96,14 +104,14 @@ class ContentFromClient:
     temp = self.getlocationName()
     coordinator_name = self.getCordinatorName()
     node_name = self.getNodeName()
-    print('[PROCESS] %s > %s | tenant=%s' % (coordinator_name, node_name, tenantId), flush=True)
+    _log('[PROCESS] %s > %s | tenant=%s' % (coordinator_name, node_name, tenantId))
 
     with _db_lock:
       ContentFromClient._ensure_db()
 
       node_id = self.get_node_id(coordinator_name, node_name, tenantId)
       if node_id is None:
-        print('[SKIP] Unknown node: %s @ %s' % (node_name, coordinator_name), flush=True)
+        _log('[SKIP] Unknown node: %s @ %s' % (node_name, coordinator_name))
         return
 
       # Collect all inserts, then commit once at the end
@@ -189,9 +197,9 @@ class ContentFromClient:
           for record in records_to_insert:
             ContentFromClient.cursor.execute(postgres_insert_query, record)
           ContentFromClient.connection.commit()
-          print('[DB] Inserted %d records for %s > %s' % (len(records_to_insert), coordinator_name, node_name), flush=True)
+          _log('[DB] Inserted %d records for %s > %s' % (len(records_to_insert), coordinator_name, node_name))
         except Exception as e:
-          print('[ERROR] DB insert failed: %s' % e, flush=True)
+          _log('[ERROR] DB insert failed: %s' % e)
           try:
             ContentFromClient.connection.rollback()
           except Exception:

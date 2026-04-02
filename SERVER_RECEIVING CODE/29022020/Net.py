@@ -14,10 +14,14 @@ from datetime import datetime
 # when the buffer fills (~4-8 KB) or the process exits / receives Ctrl+C.
 sys.stdout.reconfigure(line_buffering=True)
 
+# Shared lock for all print/log calls across threads to prevent interleaved output
+_print_lock = threading.Lock()
+
 
 def log(msg):
-    """Timestamped, flush-safe log."""
-    print('[%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), msg), flush=True)
+    """Timestamped, thread-safe log."""
+    with _print_lock:
+        print('[%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), msg), flush=True)
 
 
 # Create a TCP/IP socket

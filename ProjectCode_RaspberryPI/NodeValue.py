@@ -5,6 +5,10 @@ from datetime import datetime
 import random
 import Send_sms
 
+def _log(msg):
+  """Flush-safe log for NodeValue."""
+  print('[%s] %s' % (datetime.now().strftime('%H:%M:%S'), msg), flush=True)
+
 class ContentFromClient:
   #time_th=21600
   time_th=1800
@@ -22,7 +26,6 @@ class ContentFromClient:
   temp_date=[datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now(),datetime.now()]
   def __init__(self,content):
     self.content=content.lower()
-    print(content)
   
   
   def getTotalNodes():
@@ -103,7 +106,6 @@ class ContentFromClient:
               continue;
           pressure_value=float(value)
           if((abs((abs(ContentFromClient.temp_pressure[index_node][index_pr])-abs(pressure_value)))>=12) and (difference>=ContentFromClient.time_th or ContentFromClient.initial[index_node])):
-            print('i am in pre')
             sms=sms
             ContentFromClient.flag[index_node]=True
             
@@ -126,9 +128,7 @@ class ContentFromClient:
               continue;
           moisture_value=float(value)
           moisture_percentage=100*(abs(ContentFromClient.m_min[index_node]-moisture_value))/(abs(abs(ContentFromClient.m_min[index_node])-abs(ContentFromClient.m_max[index_node])))
-          print(moisture_percentage)
           if(((abs(moisture_percentage))>=70) and (difference>=ContentFromClient.time_th or ContentFromClient.initial[index_node])):
-            print('i am in MOISTURE')
             sms=sms+' \n ' +name+' : '+str(moisture_percentage)
             ContentFromClient.flag[index_node]=True
             #print('THERE IS A POSSSIBILITY OF LANDSLIDE AT '+coordinator_name+'  '+node_name+'. SENSOR name IS '+name+' having value is '+value+' At time '+now.strftime("%m/%d/%Y, %H:%M:%S"))  
@@ -154,7 +154,6 @@ class ContentFromClient:
               continue;
           roll_value=float(value)
           if(abs((abs(ContentFromClient.temp_roll[index_node][index_roll])-abs(roll_value)))>=2 and (difference>=ContentFromClient.time_th or ContentFromClient.initial[index_node])):
-            print('i am in roll')
             #sms=sms+' \n '+name+' : '+value
             sms=sms
             ContentFromClient.flag[index_node]=True
@@ -184,7 +183,6 @@ class ContentFromClient:
             index_pitch=3
 
           if(abs((abs(ContentFromClient.temp_pitch[index_pitch][index_node])-abs(pitch_value)))>=2 and (difference>=ContentFromClient.time_th or ContentFromClient.initial[index_node])):
-            print('i am in pitch')
             sms=sms
             ContentFromClient.flag[index_node]=True
             #print('THERE IS A POSSSIBILITY OF LANDSLIDE AT '+coordinator_name+'  '+node_name+'. SENSOR name IS '+name+' having value is '+value+' At time '+now.strftime("%m/%d/%Y, %H:%M:%S"))  
@@ -230,16 +228,14 @@ class ContentFromClient:
       if ContentFromClient.flag[index_node]:
           
         Send_sms.send_sms(sms)
-        #print(sms)
-        #print(ContentFromClient.flag)
-        print('SMS SENT')
+        _log('ALERT  | SMS sent for %s > %s' % (coordinator_name, node_name))
         ContentFromClient.temp_date[index_node]=now
         ContentFromClient.initial[index_node]=False
         ContentFromClient.flag[index_node]=False
              
       #print(ContentFromClient.flag)  
     except Exception as e:
-        print("ANY ERROR",e)
+        _log('ERROR  | Sensor processing failed: %s' % e)
     
 
 if __name__ == "__main__":

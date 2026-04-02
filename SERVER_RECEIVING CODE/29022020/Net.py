@@ -7,6 +7,19 @@ import Sensorinformation
 import NodeValue
 from datetime import datetime
 
+# Force unbuffered stdout so logs never appear "stuck"
+# This is the root cause of the hung-log issue: Python block-buffers
+# stdout when not attached to an interactive terminal (e.g. nohup, screen,
+# or pipe). Prints accumulate silently in a memory buffer and only appear
+# when the buffer fills (~4-8 KB) or the process exits / receives Ctrl+C.
+sys.stdout.reconfigure(line_buffering=True)
+
+
+def log(msg):
+    """Timestamped, flush-safe log."""
+    print('[%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), msg), flush=True)
+
+
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -24,7 +37,7 @@ server.listen(128)
 inputs = [server]
 outputs = []
 
-print('[SERVER] Listening on %s:%d' % (server_address[0], server_address[1]))
+log('SERVER started on %s:%d' % (server_address[0], server_address[1]))
 
 
 def process_data_async(process_data):
@@ -40,9 +53,12 @@ def process_data_async(process_data):
             f.write(process_data)
             if process_data[-1] == ')':
                 f.write('\n')
+        log('SAVED to A.txt | %s' % process_data[:60])
     except Exception as e:
-        print('[ERROR] Processing failed: %s' % e)
+        log('ERROR processing data: %s' % e)
 
+
+active_connections = 0
 
 while inputs:
     readable, writable, exceptional = select.select(inputs, outputs, inputs, 1)
@@ -51,6 +67,8 @@ while inputs:
             connection, client_address = s.accept()
             connection.setblocking(0)
             inputs.append(connection)
+            active_connections += 1
+            log('CONNECT from %s:%d | active=%d' % (client_address[0], client_address[1], active_connections))
         else:
             try:
                 data = s.recv(2000)
@@ -59,7 +77,7 @@ while inputs:
                     process_data = data.decode('utf-8').lower()
                     if process_data.startswith("get"):
                         continue
-                    print('[RECV] %d bytes | %s' % (len(process_data), process_data[:80]))
+                    log('RECV %d bytes | %s' % (len(process_data), process_data[:80]))
 
                     # Process in a worker thread to keep the select loop free
                     t = threading.Thread(target=process_data_async, args=(process_data,))
@@ -68,17 +86,20 @@ while inputs:
                 else:
                     inputs.remove(s)
                     s.close()
+                    active_connections -= 1
+                    log('DISCONNECT | active=%d' % active_connections)
 
             except Exception as e:
-                print('[ERROR] Client socket: %s' % e)
+                log('ERROR on client socket: %s' % e)
                 if s in inputs:
                     inputs.remove(s)
                 s.close()
+                active_connections -= 1
 
     for s in exceptional:
-        print('[ERROR] Exceptional condition on socket')
+        log('ERROR exceptional condition on socket')
         inputs.remove(s)
         if s in outputs:
             outputs.remove(s)
         s.close()
-
+        active_connections -= 1

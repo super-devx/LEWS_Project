@@ -24,7 +24,7 @@ def _open_database():
     cursor = connection.cursor()
     return connection, cursor
   except Exception as e:
-    print("[ERROR] DB connection failed: %s" % e)
+    print("[ERROR] DB connection failed: %s" % e, flush=True)
     return None, None
 
 
@@ -61,7 +61,7 @@ class ContentFromClient:
       node_id = node_records[0][0]
       return node_id
     except Exception as e:
-      print("[ERROR] Node ID lookup failed: %s" % e)
+      print("[ERROR] Node ID lookup failed: %s" % e, flush=True)
       return None
 
   def getTotalNodes():
@@ -96,14 +96,14 @@ class ContentFromClient:
     temp = self.getlocationName()
     coordinator_name = self.getCordinatorName()
     node_name = self.getNodeName()
-    print('[PROCESS] %s > %s | tenant=%s' % (coordinator_name, node_name, tenantId))
+    print('[PROCESS] %s > %s | tenant=%s' % (coordinator_name, node_name, tenantId), flush=True)
 
     with _db_lock:
       ContentFromClient._ensure_db()
 
       node_id = self.get_node_id(coordinator_name, node_name, tenantId)
       if node_id is None:
-        print('[SKIP] Unknown node: %s @ %s' % (node_name, coordinator_name))
+        print('[SKIP] Unknown node: %s @ %s' % (node_name, coordinator_name), flush=True)
         return
 
       # Collect all inserts, then commit once at the end
@@ -189,9 +189,9 @@ class ContentFromClient:
           for record in records_to_insert:
             ContentFromClient.cursor.execute(postgres_insert_query, record)
           ContentFromClient.connection.commit()
-          print('[DB] Inserted %d records for %s > %s' % (len(records_to_insert), coordinator_name, node_name))
+          print('[DB] Inserted %d records for %s > %s' % (len(records_to_insert), coordinator_name, node_name), flush=True)
         except Exception as e:
-          print('[ERROR] DB insert failed: %s' % e)
+          print('[ERROR] DB insert failed: %s' % e, flush=True)
           try:
             ContentFromClient.connection.rollback()
           except Exception:

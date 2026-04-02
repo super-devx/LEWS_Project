@@ -81,7 +81,7 @@ class ContentFromClient:
         index_node=7
       if node_name=='n9':
         index_node=8
-      if node_name=='n10':
+      if node_name=='n0':
         index_node=9
       difference=(now-ContentFromClient.temp_date[index_node]).total_seconds()   
       sms='Possibility of landsliding at '+coordinator_name+' , '+node_name+' at '+now.strftime("%m/%d/%Y, %H:%M:%S")+' . Sensors Values are:' 

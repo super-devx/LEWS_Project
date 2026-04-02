@@ -6,32 +6,62 @@ import os
 import select
 import socket
 import json
+import glob
 from datetime import datetime
 import NodeValue
 import serial
+import termios
 
-SERIAL_PORT = '/dev/ttyUSB7'
 SERIAL_BAUD = 115200
 SERVER_IP = "103.37.200.35"
 SERVER_PORT = 5000
 SOCKET_TIMEOUT = 10
-LOG_FILE = '/home/sailab/ProjectCode/log.txt'
-UNSENT_FILE = '/home/sailab/ProjectCode/unsent_data.txt'
 MAX_RETRIES = 5
 INITIAL_BACKOFF = 2  # seconds
+
+# Use the script's own directory for log files so there are no permission issues
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(SCRIPT_DIR, 'log.txt')
+UNSENT_FILE = os.path.join(SCRIPT_DIR, 'unsent_data.txt')
+BACKUP_FILE = os.path.join(SCRIPT_DIR, 'all_received_data.txt')
 
 global ser
 global received_data
 received_data = ""
 
+
+def find_serial_port():
+  """Find the correct serial port by scanning all available /dev/ttyUSB* devices."""
+  # USB port numbers can shift when other USB devices are plugged/unplugged
+  ports = sorted(glob.glob('/dev/ttyUSB*'))
+  print('PORTS FOUND: %s' % ports)
+  if not ports:
+    return None
+  for port in ports:
+    try:
+      s = serial.Serial(port, SERIAL_BAUD, timeout=2)
+      # Try reading a small amount to verify this is the sensor device
+      s.close()
+      print('Found serial device on %s' % port)
+      return port
+    except Exception:
+      continue
+  return None
+
+
 # --- Connect to serial port ---
 ser = None
 while ser is None:
   try:
-    ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
-    print('CONNECTED TO SL')
+    port = find_serial_port()
+    if port:
+      ser = serial.Serial(port, SERIAL_BAUD)
+      print('CONNECTED TO SL on %s' % port)
+    else:
+      print('NOT CONNECTED TO SL - no serial devices found')
+      time.sleep(1)
   except Exception as e:
-    print('NOT CONNECTED TO SL')
+    print('NOT CONNECTED TO SL: %s' % e)
     time.sleep(1)
 
 
@@ -42,6 +72,15 @@ def log_to_file(message):
       f.write('%s %s\n' % (datetime.now(), message))
   except Exception:
     print('WARNING: Could not write to log file')
+
+
+def save_backup(data):
+  """Save every received data packet to backup file, regardless of send status."""
+  try:
+    with open(BACKUP_FILE, 'a+') as f:
+      f.write('%s|%s\n' % (datetime.now(), data))
+  except Exception:
+    print('WARNING: Could not write to backup file')
 
 
 def buffer_unsent_data(data):
@@ -106,18 +145,22 @@ def flush_unsent_data():
 
 
 def reconnect_serial():
-  """Reconnect to the serial port with retries."""
+  """Reconnect to the serial port, scanning all available USB ports."""
   global ser
   backoff = 1
   while True:
     try:
-      ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
-      print('Serial reconnected on %s' % SERIAL_PORT)
-      return
+      port = find_serial_port()
+      if port:
+        ser = serial.Serial(port, SERIAL_BAUD)
+        print('Serial reconnected on %s' % port)
+        return
+      else:
+        print('No serial devices found, retrying in %ds' % backoff)
     except Exception as e:
       print('Serial reconnect failed: %s, retrying in %ds' % (e, backoff))
-      time.sleep(backoff)
-      backoff = min(backoff * 2, 30)
+    time.sleep(backoff)
+    backoff = min(backoff * 2, 30)
 
 
 # --- Main loop ---
@@ -149,6 +192,9 @@ while True:
       print(received_data)
       time.sleep(1)
 
+      # Always save to backup first — this is the data safety net
+      save_backup(received_data)
+
       c = NodeValue.ContentFromClient(received_data)
       c.sensorvalues()
 
@@ -164,7 +210,7 @@ while True:
         buffer_unsent_data(received_data)
         send_failures += 1
 
-    except serial.SerialException as e:
+    except (serial.SerialException, termios.error, OSError) as e:
       print('Serial error: %s' % e)
       log_to_file('SERIAL ERROR: ' + str(e))
       reconnect_serial()

@@ -40,8 +40,9 @@ class ContentFromClient:
   a = 20
   connection, cursor = _open_database()
 
-  def __init__(self, content):
+  def __init__(self, content, receive_time=None):
     self.content = content.lower()
+    self.receive_time = receive_time or datetime.now()
 
   @staticmethod
   def _ensure_db():
@@ -104,7 +105,7 @@ class ContentFromClient:
     temp = self.getlocationName()
     coordinator_name = self.getCordinatorName()
     node_name = self.getNodeName()
-    _log('[PROCESS] %s > %s | tenant=%s' % (coordinator_name, node_name, tenantId))
+    _log('[PROCESS] %s > %s | tenant=%s | pi_time=%s' % (coordinator_name, node_name, tenantId, self.receive_time))
 
     with _db_lock:
       ContentFromClient._ensure_db()
@@ -183,10 +184,9 @@ class ContentFromClient:
           if float(value) >= 2000:
             threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'PITCH VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
 
-        s5 = datetime.now()
-
+        # Use Pi's receive_time (when sensor was actually read) not server time
         if value != "nan" and id is not None and id != '':
-          records_to_insert.append((id, value, s5, tenantId))
+          records_to_insert.append((id, value, self.receive_time, tenantId))
 
         index = self.content.find(')', 1)
 
@@ -209,6 +209,7 @@ class ContentFromClient:
 
 if __name__ == "__main__":
   print('hi')
-  c = ContentFromClient("2@c1@kerala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
+  # Test with explicit receive_time (simulating Pi timestamp)
+  c = ContentFromClient("2@c1@kerala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)", datetime.now())
   c.sensorvalues()
   print('DONE')

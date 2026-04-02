@@ -18,7 +18,7 @@ SERIAL_BAUD = 115200
 SERVER_IP = "103.37.200.35"
 SERVER_PORT = 5000
 SOCKET_TIMEOUT = 10
-MAX_RETRIES = 5
+MAX_RETRIES = 2
 INITIAL_BACKOFF = 2  # seconds
 
 # Use the script's own directory for log files so there are no permission issues
@@ -88,11 +88,11 @@ def save_backup(data):
     log('WARNING | Could not write to backup file')
 
 
-def buffer_unsent_data(data):
-  """Save data that could not be sent so it can be retried later."""
+def buffer_unsent_data(data_with_time):
+  """Save timestamped data that could not be sent so it can be retried later."""
   try:
     with open(UNSENT_FILE, 'a+') as f:
-      f.write('%s|%s\n' % (datetime.now(), data))
+      f.write(data_with_time + '\n')
   except Exception:
     log('WARNING | Could not buffer unsent data')
 
@@ -133,13 +133,11 @@ def flush_unsent_data():
       line = line.strip()
       if not line:
         continue
-      parts = line.split('|', 1)
-      if len(parts) == 2:
-        data = parts[1]
-        if send_to_server(data):
-          sent += 1
-        else:
-          remaining.append(line)
+      # Send the full line (timestamp|sensordata) so server gets the Pi timestamp
+      if send_to_server(line):
+        sent += 1
+      else:
+        remaining.append(line)
 
     with open(UNSENT_FILE, 'w') as f:
       for line in remaining:
@@ -195,6 +193,12 @@ while True:
 
       received_data = received_data[index_strt + 1:index_end]
       packet_count += 1
+
+      # Capture Pi timestamp at the moment data is read from serial
+      pi_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+      # Format: timestamp|sensordata — this timestamp travels with the data
+      data_with_time = '%s|%s' % (pi_timestamp, received_data)
+
       log('RECV   | #%d | %s' % (packet_count, received_data))
 
       # Always save to backup first — this is the data safety net
@@ -206,15 +210,15 @@ while True:
       # Try to flush old buffered data first (piggyback on connectivity)
       flush_unsent_data()
 
-      # Send current data
-      if send_to_server(received_data):
+      # Send current data with Pi timestamp
+      if send_to_server(data_with_time):
         send_failures = 0
         log('SEND   | OK | #%d sent to %s:%d' % (packet_count, SERVER_IP, SERVER_PORT))
       else:
         send_failures += 1
         log('SEND   | FAILED | #%d buffered locally (total failures: %d)' % (packet_count, send_failures))
         log_to_file('SEND FAILED: ' + received_data)
-        buffer_unsent_data(received_data)
+        buffer_unsent_data(data_with_time)
 
     except (serial.SerialException, termios.error, OSError) as e:
       log('SERIAL | DISCONNECTED: %s' % e)
@@ -226,6 +230,8 @@ while True:
       log('ERROR  | %s' % e)
       log_to_file(str(e))
       if len(received_data) > 10:
+        pi_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        data_with_time = '%s|%s' % (pi_timestamp, received_data)
         log_to_file('UNSENT: ' + received_data)
-        buffer_unsent_data(received_data)
+        buffer_unsent_data(data_with_time)
       received_data = ""

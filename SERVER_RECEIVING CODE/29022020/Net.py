@@ -47,17 +47,32 @@ log('SERVER started on %s:%d' % (server_address[0], server_address[1]))
 def process_data_async(process_data):
     """Process received data in a separate thread so the select loop stays responsive."""
     try:
-        c = NodeValue.ContentFromClient(process_data)
+        # Data format from Pi: "YYYY-MM-DD HH:MM:SS|sensordata"
+        # If timestamp prefix is present, extract it as the Pi's receive_time
+        if '|' in process_data:
+            pi_timestamp_str, sensor_data = process_data.split('|', 1)
+            try:
+                pi_timestamp = datetime.strptime(pi_timestamp_str.strip(), '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                # Malformed timestamp, fall back to server time
+                sensor_data = process_data
+                pi_timestamp = datetime.now()
+        else:
+            # Backwards compatibility: no timestamp prefix
+            sensor_data = process_data
+            pi_timestamp = datetime.now()
+
+        c = NodeValue.ContentFromClient(sensor_data, pi_timestamp)
         c.sensorvalues()
 
         with open('A.txt', 'a+') as f:
             now = datetime.now()
             f.write('%s' % now)
             f.write("\r\n")
-            f.write(process_data)
-            if process_data[-1] == ')':
+            f.write(sensor_data)
+            if sensor_data[-1] == ')':
                 f.write('\n')
-        log('SAVED to A.txt | %s' % process_data[:60])
+        log('SAVED to A.txt | %s' % sensor_data[:60])
     except Exception as e:
         log('ERROR processing data: %s' % e)
 

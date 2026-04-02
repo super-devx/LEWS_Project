@@ -7,7 +7,7 @@ BAUD = 115200
 
 # ✅ LIST OF 5 PEOPLE (use international format)
 PHONE_NUMBERS = [
-    "+918791599206",
+    "+91879159920X",
     "+91XXXXXXXXXX",
     "+91XXXXXXXXXX",
     "+91XXXXXXXXXX",

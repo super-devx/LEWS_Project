@@ -226,8 +226,9 @@ class ContentFromClient:
       #print(ContentFromClient.flag[index_node])
       #print(ContentFromClient.flag)
       if ContentFromClient.flag[index_node]:
-          
-        Send_sms.send_sms(sms)
+
+        for phone in Send_sms.PHONE_NUMBERS:
+          Send_sms.send_sms(phone, sms)
         _log('ALERT  | SMS sent for %s > %s' % (coordinator_name, node_name))
         ContentFromClient.temp_date[index_node]=now
         ContentFromClient.initial[index_node]=False

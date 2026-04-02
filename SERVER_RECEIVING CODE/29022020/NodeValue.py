@@ -5,215 +5,211 @@ import sys
 import psycopg2
 from datetime import datetime
 import random
+import threading
 import Send
 
-class ContentFromClient:
-  a=20
-  connection=None
-  cursor=None
-  def __init__(self,content):
-    self.content=content.lower()
-    #print(content)
-    
-  def opendatabase():
-    try:
-      connection = psycopg2.connect(user="postgres",password="Root@1234A",host="127.0.0.1",port="5432",database="netala_database")
-      cursor = connection.cursor()
-      return connection,cursor
-    except Exception as e:
-      print("THERE IS SOME PROBLEM",e)
-  
-  
-  connection,cursor=opendatabase()
-  
-  #print('i am')
-  def close():
-    cursor.close()
-    connection.close()
-    
-    
-  def get_node_id(self,cname,name,tenantId):
-    try:
-      #print(ContentFromClient.a)
-      query="SELECT node_id FROM node WHERE name=%s AND location=%s AND tenant_id=%s"
-      cursor=ContentFromClient.cursor
-      print(name,cname,tenantId)
-      cursor.execute(query,(name,cname,tenantId))
-      node_records = cursor.fetchall()
-      node_id=node_records[0][0]
-      #print('here',node_id)
-      return node_id
+DB_USER = "postgres"
+DB_PASSWORD = "Root@1234A"
+DB_HOST = "127.0.0.1"
+DB_PORT = "5432"
+DB_NAME = "netala_database"
 
+# Thread lock for database access since Net.py now processes data in worker threads
+_db_lock = threading.Lock()
+
+
+def _open_database():
+  try:
+    connection = psycopg2.connect(user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT, database=DB_NAME)
+    cursor = connection.cursor()
+    return connection, cursor
+  except Exception as e:
+    print("THERE IS SOME PROBLEM", e)
+    return None, None
+
+
+class ContentFromClient:
+  a = 20
+  connection, cursor = _open_database()
+
+  def __init__(self, content):
+    self.content = content.lower()
+
+  @staticmethod
+  def _ensure_db():
+    """Reconnect to database if the connection is closed or broken."""
+    try:
+      if ContentFromClient.connection is None or ContentFromClient.connection.closed:
+        ContentFromClient.connection, ContentFromClient.cursor = _open_database()
+        return
+      # Test if connection is still alive
+      ContentFromClient.cursor.execute("SELECT 1")
+      ContentFromClient.cursor.fetchone()
+    except Exception:
+      try:
+        ContentFromClient.connection.close()
+      except Exception:
+        pass
+      ContentFromClient.connection, ContentFromClient.cursor = _open_database()
+
+  def get_node_id(self, cname, name, tenantId):
+    try:
+      query = "SELECT node_id FROM node WHERE name=%s AND location=%s AND tenant_id=%s"
+      cursor = ContentFromClient.cursor
+      print(name, cname, tenantId)
+      cursor.execute(query, (name, cname, tenantId))
+      node_records = cursor.fetchall()
+      node_id = node_records[0][0]
+      return node_id
     except Exception as e:
-      print("PROBLEM IN FETCH node ID",e)
+      print("PROBLEM IN FETCH node ID", e)
       return None
-  
+
   def getTotalNodes():
     for i in content:
       pass
 
-
-  def  getTenantId(self):
-    #indexofname=self.content.find('@')
-    #tenantId=self.content[0:indexofname]
-    #self.content=self.content[indexofname+1:]
-
+  def getTenantId(self):
     return "2"
 
-  def  getlocationName(self):
-    indexofname=self.content.find('@')
-    name=self.content[0:indexofname]
-    self.content=self.content[indexofname+1:]
+  def getlocationName(self):
+    indexofname = self.content.find('@')
+    name = self.content[0:indexofname]
+    self.content = self.content[indexofname + 1:]
     return name
-    
-  def  getCordinatorName(self):
-      indexofname=self.content.find('@')
-      name=self.content[0:indexofname]
-      self.content=self.content[indexofname+1:]
-      return name
-    
-    
-  def  getNodeName(self):
-    indexofname=self.content.find('(')
-    name=self.content[0:indexofname]
-    self.content=self.content[indexofname:]
+
+  def getCordinatorName(self):
+    indexofname = self.content.find('@')
+    name = self.content[0:indexofname]
+    self.content = self.content[indexofname + 1:]
     return name
-    
-      
+
+  def getNodeName(self):
+    indexofname = self.content.find('(')
+    name = self.content[0:indexofname]
+    self.content = self.content[indexofname:]
+    return name
+
   def sensorvalues(self):
-    all1=[]
-    tenantId=self.getTenantId()
-    print('tenant id is'+tenantId)
-    
-    temp=self.getlocationName()
-    coordinator_name=self.getCordinatorName()
-    node_name=self.getNodeName()
+    all1 = []
+    tenantId = self.getTenantId()
+    print('tenant id is' + tenantId)
 
-    node_id=self.get_node_id(coordinator_name,node_name,tenantId)
-    if node_id == None:
-      print('cant insert ')
-      return;
-    index=self.content.find(')',1)
-    value=''
-    while(index!=-1):
-      id=''
-      temp=self.content[1:index]
-      
-      if(temp.startswith('pressure')):
-        indexofcolon=self.content.find(':')
-        name=self.content[1:indexofcolon]
-        print("name is"+name)
-        value=self.content[indexofcolon+1:index]
-        print(value)
-        self.content=self.content[index+1:]
-        s=Sensorinformation(name,value,'presure',coordinator_name)
-        #id='rl'+name[len(name)-1]+'_'+node_id
-        id=node_id+'_'+'pr'+name[len(name)-1]
-        print(id)
-        if(float(value)>=20000):
-          Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','Presure VALUE IS CROSSING THRESOLD '+value)  
-        #print(id)
+    temp = self.getlocationName()
+    coordinator_name = self.getCordinatorName()
+    node_name = self.getNodeName()
 
+    with _db_lock:
+      ContentFromClient._ensure_db()
 
-      if(temp.startswith('moisture')):
-        indexofcolon=self.content.find(':')
-        name=self.content[1:indexofcolon]
-        value=self.content[indexofcolon+1:index]
-        self.content=self.content[index+1:]
-        s=Sensorinformation(name,value,'moisture',coordinator_name)
-        #id=node_id+'_'+'ms'+name[len(name)-1]
-        id=node_id+'_'+'ms1'
-        if(float(value)>=50000):
-          Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','MOISTURE VALUE IS CROSSING THRESOLD '+value)  
-        #print(id)
+      node_id = self.get_node_id(coordinator_name, node_name, tenantId)
+      if node_id is None:
+        print('cant insert ')
+        return
 
+      # Collect all inserts, then commit once at the end
+      records_to_insert = []
 
-      if(temp.startswith('roll')):
-        indexofcolon=self.content.find(':')
-        name=self.content[1:indexofcolon]
-        value=self.content[indexofcolon+1:index]
-        self.content=self.content[index+1:]
-        s=Sensorinformation(name,value,'roll',coordinator_name)
-        id=node_id+'_'+'ro'+name[len(name)-1]
-        if(float(value)>=20000):
-          Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','Roll VALUE IS CROSSING THRESOLD '+value)  
-        #print(id)
-       
-       
-      if(temp.startswith('voltage')):
-        indexofcolon=self.content.find(':')
-        name=self.content[1:indexofcolon]
-        value=self.content[indexofcolon+1:index]
-        self.content=self.content[index+1:]
-        s=Sensorinformation(name,value,'voltage',coordinator_name)
-        id=node_id+'_'+'voltage'+name[len(name)-1]
-        if(float(value)>=20000):
-          Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','Roll VALUE IS CROSSING THRESOLD '+value)  
-        #print(id)
+      index = self.content.find(')', 1)
+      value = ''
+      while index != -1:
+        id = ''
+        temp = self.content[1:index]
 
-      if(temp.startswith('vols')):
-        print('in VOLS')
-        indexofcolon=self.content.find(':')
-        name=self.content[1:indexofcolon]
-        value=self.content[indexofcolon+1:index]
-        print(name,value)
-        self.content=self.content[index+1:]
-        s=Sensorinformation(name,value,'vols',coordinator_name)
-        id=node_id+'_'+'vols'+name[len(name)-1]
-        if(float(value)>=20000):
-          Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','Roll VALUE IS CROSSING THRESOLD '+value) 
+        if temp.startswith('pressure'):
+          indexofcolon = self.content.find(':')
+          name = self.content[1:indexofcolon]
+          print("name is" + name)
+          value = self.content[indexofcolon + 1:index]
+          print(value)
+          self.content = self.content[index + 1:]
+          s = Sensorinformation(name, value, 'presure', coordinator_name)
+          id = node_id + '_' + 'pr' + name[len(name) - 1]
+          print(id)
+          if float(value) >= 20000:
+            threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'Presure VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
 
+        if temp.startswith('moisture'):
+          indexofcolon = self.content.find(':')
+          name = self.content[1:indexofcolon]
+          value = self.content[indexofcolon + 1:index]
+          self.content = self.content[index + 1:]
+          s = Sensorinformation(name, value, 'moisture', coordinator_name)
+          id = node_id + '_' + 'ms1'
+          if float(value) >= 50000:
+            threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'MOISTURE VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
 
-      if(temp.startswith('pitch')):
-        indexofcolon=self.content.find(':')
-        name=self.content[1:indexofcolon]
-        value=self.content[indexofcolon+1:index]
-        self.content=self.content[index+1:]
-        s=Sensorinformation(name,value,'pitch',coordinator_name)
-        id=node_id+'_'+'pi'+name[len(name)-1]
-        #print(id)
-        if(float(value)>=2000):
-          Send.send_msg('lews.sailab@gmail.com','rjvkmr80@gmail.com','PITCH VALUE IS CROSSING THRESOLD '+value)  
-      s5=datetime.now()
+        if temp.startswith('roll'):
+          indexofcolon = self.content.find(':')
+          name = self.content[1:indexofcolon]
+          value = self.content[indexofcolon + 1:index]
+          self.content = self.content[index + 1:]
+          s = Sensorinformation(name, value, 'roll', coordinator_name)
+          id = node_id + '_' + 'ro' + name[len(name) - 1]
+          if float(value) >= 20000:
+            threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'Roll VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
 
-      try:
-        postgres_insert_query = 'INSERT INTO sensor_data (sensor_id,sensor_value,receive_time,tenant_id) VALUES (%s,%s,%s,%s)'
-        record_to_insert = (id,value,s5,tenantId)
-        print('pair is',id,value,s5,tenantId)
-        print("id is")
-        if value=="nan" or id==None:
-          print("YES")
-          index=self.content.find(')',1)
-          continue
-        ContentFromClient.cursor.execute(postgres_insert_query,record_to_insert)
-        ContentFromClient.connection.commit()
-        print("ENTERED IN DATABASE")
-      except Exception as e:
-        print('DATA CANT INSERT IN DATABASE DUE TO ',e)
-        
-        ContentFromClient.connection.close()
-        ContentFromClient.cursor.close() 
-        ContentFromClient.connection,ContentFromClient.cursor=ContentFromClient.opendatabase()
-      #query_insert="insert into sensor_data values(?,?,?)"
-      index=self.content.find(')',1)
-    
-    
+        if temp.startswith('voltage'):
+          indexofcolon = self.content.find(':')
+          name = self.content[1:indexofcolon]
+          value = self.content[indexofcolon + 1:index]
+          self.content = self.content[index + 1:]
+          s = Sensorinformation(name, value, 'voltage', coordinator_name)
+          id = node_id + '_' + 'voltage' + name[len(name) - 1]
+          if float(value) >= 20000:
+            threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'Roll VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
+
+        if temp.startswith('vols'):
+          print('in VOLS')
+          indexofcolon = self.content.find(':')
+          name = self.content[1:indexofcolon]
+          value = self.content[indexofcolon + 1:index]
+          print(name, value)
+          self.content = self.content[index + 1:]
+          s = Sensorinformation(name, value, 'vols', coordinator_name)
+          id = node_id + '_' + 'vols' + name[len(name) - 1]
+          if float(value) >= 20000:
+            threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'Roll VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
+
+        if temp.startswith('pitch'):
+          indexofcolon = self.content.find(':')
+          name = self.content[1:indexofcolon]
+          value = self.content[indexofcolon + 1:index]
+          self.content = self.content[index + 1:]
+          s = Sensorinformation(name, value, 'pitch', coordinator_name)
+          id = node_id + '_' + 'pi' + name[len(name) - 1]
+          if float(value) >= 2000:
+            threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'PITCH VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
+
+        s5 = datetime.now()
+
+        if value != "nan" and id is not None and id != '':
+          records_to_insert.append((id, value, s5, tenantId))
+        else:
+          print("Skipping nan/None value")
+
+        index = self.content.find(')', 1)
+
+      # Single commit for all sensor values in this packet
+      if records_to_insert:
+        try:
+          postgres_insert_query = 'INSERT INTO sensor_data (sensor_id,sensor_value,receive_time,tenant_id) VALUES (%s,%s,%s,%s)'
+          for record in records_to_insert:
+            print('pair is', record[0], record[1], record[2], record[3])
+            ContentFromClient.cursor.execute(postgres_insert_query, record)
+          ContentFromClient.connection.commit()
+          print("ENTERED %d RECORDS IN DATABASE" % len(records_to_insert))
+        except Exception as e:
+          print('DATA CANT INSERT IN DATABASE DUE TO ', e)
+          try:
+            ContentFromClient.connection.rollback()
+          except Exception:
+            pass
+          ContentFromClient._ensure_db()
+
 
 if __name__ == "__main__":
   print('hi')
-  # Test with tenant_id format: tenantId@location@coordinator@node(sensor:value)...
-  # Old format (3 parts): c1@netala@n1(...)
-  # New format (4 parts with INTEGER tenant_id): 1@c1@netala@n1(...)
-  # NOTE: tenant_id is now INTEGER (1, 2, 3...), not string!
-
-  c=ContentFromClient("2@c1@kerala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
-  #c=ContentFromClient("1@c1@tangni@n1(moisture1:39.99)(pitch1:-4)(roll1:-17)(pitch2:1)(roll2:-36)(pitch3:0)(roll3:-64)(pitch4:5)(roll4:-85)")
-  #c=ContentFromClient("1@c1@tangni@n4(moisture1:52.75)(pressure:nan)")
-  #c=ContentFromClient("1@c1@netala@n2(moisture1:55.69)(voltage1:3.41)(vols1:2118.00)")
-
-
-
+  c = ContentFromClient("2@c1@kerala@n1(moisture1:581.02)(pitch10:-75)(roll1:-4)(pitch2:-95)(roll2:-95)(pitch3:-95)(roll3:-95)(pitch4:-95)(roll4:-95)")
   c.sensorvalues()
   print('DONE')
-  #pass
-  

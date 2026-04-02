@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import sys
-print('NEW DATA..................................')
 import time
 import os
 import select
@@ -30,19 +29,22 @@ global received_data
 received_data = ""
 
 
+def log(msg):
+  """Print a timestamped, flush-safe log message."""
+  print('[%s] %s' % (datetime.now().strftime('%H:%M:%S'), msg), flush=True)
+
+
 def find_serial_port():
   """Find the correct serial port by scanning all available /dev/ttyUSB* devices."""
-  # USB port numbers can shift when other USB devices are plugged/unplugged
   ports = sorted(glob.glob('/dev/ttyUSB*'))
-  print('PORTS FOUND: %s' % ports)
   if not ports:
+    log('SERIAL | No USB devices found')
     return None
+  log('SERIAL | Scanning ports: %s' % ', '.join(ports))
   for port in ports:
     try:
       s = serial.Serial(port, SERIAL_BAUD, timeout=2)
-      # Try reading a small amount to verify this is the sensor device
       s.close()
-      print('Found serial device on %s' % port)
       return port
     except Exception:
       continue
@@ -50,18 +52,18 @@ def find_serial_port():
 
 
 # --- Connect to serial port ---
+log('========== STARTING UP ==========')
 ser = None
 while ser is None:
   try:
     port = find_serial_port()
     if port:
       ser = serial.Serial(port, SERIAL_BAUD)
-      print('CONNECTED TO SL on %s' % port)
+      log('SERIAL | Connected on %s' % port)
     else:
-      print('NOT CONNECTED TO SL - no serial devices found')
       time.sleep(1)
   except Exception as e:
-    print('NOT CONNECTED TO SL: %s' % e)
+    log('SERIAL | Connection failed: %s' % e)
     time.sleep(1)
 
 
@@ -71,7 +73,7 @@ def log_to_file(message):
     with open(LOG_FILE, 'a+') as f:
       f.write('%s %s\n' % (datetime.now(), message))
   except Exception:
-    print('WARNING: Could not write to log file')
+    log('WARNING | Could not write to log file')
 
 
 def save_backup(data):
@@ -80,7 +82,7 @@ def save_backup(data):
     with open(BACKUP_FILE, 'a+') as f:
       f.write('%s|%s\n' % (datetime.now(), data))
   except Exception:
-    print('WARNING: Could not write to backup file')
+    log('WARNING | Could not write to backup file')
 
 
 def buffer_unsent_data(data):
@@ -89,7 +91,7 @@ def buffer_unsent_data(data):
     with open(UNSENT_FILE, 'a+') as f:
       f.write('%s|%s\n' % (datetime.now(), data))
   except Exception:
-    print('WARNING: Could not buffer unsent data')
+    log('WARNING | Could not buffer unsent data')
 
 
 def send_to_server(data):
@@ -101,14 +103,13 @@ def send_to_server(data):
       conn = socket.create_connection((host, SERVER_PORT), SOCKET_TIMEOUT)
       conn.sendall(bytes(data, 'utf-8'))
       conn.close()
-      print("data send")
       return True
     except Exception as e:
-      print('Send attempt %d/%d failed: %s' % (attempt + 1, MAX_RETRIES, e))
+      log('SEND   | Attempt %d/%d failed: %s' % (attempt + 1, MAX_RETRIES, e))
       if attempt < MAX_RETRIES - 1:
-        print('Retrying in %d seconds...' % backoff)
+        log('SEND   | Retrying in %ds...' % backoff)
         time.sleep(backoff)
-        backoff = min(backoff * 2, 60)  # cap at 60 seconds
+        backoff = min(backoff * 2, 60)
   return False
 
 
@@ -122,26 +123,27 @@ def flush_unsent_data():
     if not lines:
       return
 
+    log('BUFFER | Flushing %d buffered packets...' % len(lines))
     remaining = []
+    sent = 0
     for line in lines:
       line = line.strip()
       if not line:
         continue
-      # Format: timestamp|data
       parts = line.split('|', 1)
       if len(parts) == 2:
         data = parts[1]
         if send_to_server(data):
-          print('Flushed buffered data: %s' % data[:50])
+          sent += 1
         else:
           remaining.append(line)
 
-    # Rewrite file with only the lines that still failed
     with open(UNSENT_FILE, 'w') as f:
       for line in remaining:
         f.write(line + '\n')
+    log('BUFFER | Flushed %d, remaining %d' % (sent, len(remaining)))
   except Exception as e:
-    print('WARNING: Could not flush unsent data: %s' % e)
+    log('WARNING | Could not flush unsent data: %s' % e)
 
 
 def reconnect_serial():
@@ -153,22 +155,22 @@ def reconnect_serial():
       port = find_serial_port()
       if port:
         ser = serial.Serial(port, SERIAL_BAUD)
-        print('Serial reconnected on %s' % port)
+        log('SERIAL | Reconnected on %s' % port)
         return
       else:
-        print('No serial devices found, retrying in %ds' % backoff)
+        log('SERIAL | Waiting for device... retrying in %ds' % backoff)
     except Exception as e:
-      print('Serial reconnect failed: %s, retrying in %ds' % (e, backoff))
+      log('SERIAL | Reconnect failed: %s, retrying in %ds' % (e, backoff))
     time.sleep(backoff)
     backoff = min(backoff * 2, 30)
 
 
 # --- Main loop ---
 send_failures = 0
+packet_count = 0
 
 while True:
     try:
-      print('waiting on serial')
       ser.flush()
       time.sleep(1)
 
@@ -189,8 +191,8 @@ while True:
         continue
 
       received_data = received_data[index_strt + 1:index_end]
-      print(received_data)
-      time.sleep(1)
+      packet_count += 1
+      log('RECV   | #%d | %s' % (packet_count, received_data))
 
       # Always save to backup first — this is the data safety net
       save_backup(received_data)
@@ -204,20 +206,21 @@ while True:
       # Send current data
       if send_to_server(received_data):
         send_failures = 0
+        log('SEND   | OK | #%d sent to %s:%d' % (packet_count, SERVER_IP, SERVER_PORT))
       else:
-        print('DATA CANT SEND after %d retries, buffering locally' % MAX_RETRIES)
+        send_failures += 1
+        log('SEND   | FAILED | #%d buffered locally (total failures: %d)' % (packet_count, send_failures))
         log_to_file('SEND FAILED: ' + received_data)
         buffer_unsent_data(received_data)
-        send_failures += 1
 
     except (serial.SerialException, termios.error, OSError) as e:
-      print('Serial error: %s' % e)
+      log('SERIAL | DISCONNECTED: %s' % e)
       log_to_file('SERIAL ERROR: ' + str(e))
       reconnect_serial()
       received_data = ""
 
     except Exception as e:
-      print('Error: %s' % e)
+      log('ERROR  | %s' % e)
       log_to_file(str(e))
       if len(received_data) > 10:
         log_to_file('UNSENT: ' + received_data)

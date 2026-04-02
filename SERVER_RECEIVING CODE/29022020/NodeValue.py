@@ -24,7 +24,7 @@ def _open_database():
     cursor = connection.cursor()
     return connection, cursor
   except Exception as e:
-    print("THERE IS SOME PROBLEM", e)
+    print("[ERROR] DB connection failed: %s" % e)
     return None, None
 
 
@@ -56,13 +56,12 @@ class ContentFromClient:
     try:
       query = "SELECT node_id FROM node WHERE name=%s AND location=%s AND tenant_id=%s"
       cursor = ContentFromClient.cursor
-      print(name, cname, tenantId)
       cursor.execute(query, (name, cname, tenantId))
       node_records = cursor.fetchall()
       node_id = node_records[0][0]
       return node_id
     except Exception as e:
-      print("PROBLEM IN FETCH node ID", e)
+      print("[ERROR] Node ID lookup failed: %s" % e)
       return None
 
   def getTotalNodes():
@@ -93,18 +92,18 @@ class ContentFromClient:
   def sensorvalues(self):
     all1 = []
     tenantId = self.getTenantId()
-    print('tenant id is' + tenantId)
 
     temp = self.getlocationName()
     coordinator_name = self.getCordinatorName()
     node_name = self.getNodeName()
+    print('[PROCESS] %s > %s | tenant=%s' % (coordinator_name, node_name, tenantId))
 
     with _db_lock:
       ContentFromClient._ensure_db()
 
       node_id = self.get_node_id(coordinator_name, node_name, tenantId)
       if node_id is None:
-        print('cant insert ')
+        print('[SKIP] Unknown node: %s @ %s' % (node_name, coordinator_name))
         return
 
       # Collect all inserts, then commit once at the end
@@ -119,13 +118,10 @@ class ContentFromClient:
         if temp.startswith('pressure'):
           indexofcolon = self.content.find(':')
           name = self.content[1:indexofcolon]
-          print("name is" + name)
           value = self.content[indexofcolon + 1:index]
-          print(value)
           self.content = self.content[index + 1:]
           s = Sensorinformation(name, value, 'presure', coordinator_name)
           id = node_id + '_' + 'pr' + name[len(name) - 1]
-          print(id)
           if float(value) >= 20000:
             threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'Presure VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
 
@@ -160,11 +156,9 @@ class ContentFromClient:
             threading.Thread(target=Send.send_msg, args=('lews.sailab@gmail.com', 'rjvkmr80@gmail.com', 'Roll VALUE IS CROSSING THRESOLD ' + value), daemon=True).start()
 
         if temp.startswith('vols'):
-          print('in VOLS')
           indexofcolon = self.content.find(':')
           name = self.content[1:indexofcolon]
           value = self.content[indexofcolon + 1:index]
-          print(name, value)
           self.content = self.content[index + 1:]
           s = Sensorinformation(name, value, 'vols', coordinator_name)
           id = node_id + '_' + 'vols' + name[len(name) - 1]
@@ -185,8 +179,6 @@ class ContentFromClient:
 
         if value != "nan" and id is not None and id != '':
           records_to_insert.append((id, value, s5, tenantId))
-        else:
-          print("Skipping nan/None value")
 
         index = self.content.find(')', 1)
 
@@ -195,12 +187,11 @@ class ContentFromClient:
         try:
           postgres_insert_query = 'INSERT INTO sensor_data (sensor_id,sensor_value,receive_time,tenant_id) VALUES (%s,%s,%s,%s)'
           for record in records_to_insert:
-            print('pair is', record[0], record[1], record[2], record[3])
             ContentFromClient.cursor.execute(postgres_insert_query, record)
           ContentFromClient.connection.commit()
-          print("ENTERED %d RECORDS IN DATABASE" % len(records_to_insert))
+          print('[DB] Inserted %d records for %s > %s' % (len(records_to_insert), coordinator_name, node_name))
         except Exception as e:
-          print('DATA CANT INSERT IN DATABASE DUE TO ', e)
+          print('[ERROR] DB insert failed: %s' % e)
           try:
             ContentFromClient.connection.rollback()
           except Exception:

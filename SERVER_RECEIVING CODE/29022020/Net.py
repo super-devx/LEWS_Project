@@ -24,7 +24,7 @@ server.listen(128)
 inputs = [server]
 outputs = []
 
-print('waiting for request')
+print('[SERVER] Listening on %s:%d' % (server_address[0], server_address[1]))
 
 
 def process_data_async(process_data):
@@ -40,10 +40,8 @@ def process_data_async(process_data):
             f.write(process_data)
             if process_data[-1] == ')':
                 f.write('\n')
-        print('WRITTEN IN DATA')
-        print(process_data)
     except Exception as e:
-        print('Processing error: %s' % e)
+        print('[ERROR] Processing failed: %s' % e)
 
 
 while inputs:
@@ -53,19 +51,15 @@ while inputs:
             connection, client_address = s.accept()
             connection.setblocking(0)
             inputs.append(connection)
-            print('connection done')
         else:
             try:
                 data = s.recv(2000)
-                print('I have received data')
 
                 if data:
-                    print('DATA RECEIVED')
                     process_data = data.decode('utf-8').lower()
-                    print(process_data)
-                    print(len(process_data))
                     if process_data.startswith("get"):
                         continue
+                    print('[RECV] %d bytes | %s' % (len(process_data), process_data[:80]))
 
                     # Process in a worker thread to keep the select loop free
                     t = threading.Thread(target=process_data_async, args=(process_data,))
@@ -74,21 +68,17 @@ while inputs:
                 else:
                     inputs.remove(s)
                     s.close()
-                    print('out')
 
             except Exception as e:
-                print('in', e)
+                print('[ERROR] Client socket: %s' % e)
                 if s in inputs:
                     inputs.remove(s)
                 s.close()
 
     for s in exceptional:
-        print('i am in exceptional')
+        print('[ERROR] Exceptional condition on socket')
         inputs.remove(s)
         if s in outputs:
             outputs.remove(s)
         s.close()
 
-    for item in inputs:
-        # print(item)
-        pass

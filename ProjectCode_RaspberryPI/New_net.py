@@ -38,16 +38,29 @@ def log(msg):
 
 
 def find_serial_port():
-  """Find the correct serial port by scanning all available /dev/ttyUSB* devices."""
-  ports = sorted(glob.glob('/dev/ttyUSB*'))
+  """Find the sensor serial port, scanning /dev/serial/by-id/ (stable) and /dev/ttyUSB* (fallback)."""
+  # Prefer /dev/serial/by-id/ — these paths are tied to the device hardware ID
+  # and don't change when other USB devices are plugged/unplugged
+  ports = sorted(glob.glob('/dev/serial/by-id/*'))
+  ports += sorted(glob.glob('/dev/ttyUSB*'))
+
   if not ports:
     log('SERIAL | No USB devices found')
     return None
   log('SERIAL | Scanning ports: %s' % ', '.join(ports))
+
   for port in ports:
     try:
       s = serial.Serial(port, SERIAL_BAUD, timeout=2)
+      # Send AT command to check if this is a modem — skip it if so
+      s.write(b'AT\r\n')
+      time.sleep(0.5)
+      resp = s.read_all()
       s.close()
+      if b'OK' in resp:
+        log('SERIAL | Skipping modem port: %s' % port)
+        continue
+      # Not a modem — this is the sensor device
       return port
     except Exception:
       continue

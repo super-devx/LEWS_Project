@@ -14,6 +14,7 @@ import NodeValue
 import serial
 import termios
 
+SERIAL_PORT = "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
 SERIAL_BAUD = 115200
 SERVER_IP = "103.37.200.35"
 SERVER_PORT = 5000
@@ -38,29 +39,16 @@ def log(msg):
 
 
 def find_serial_port():
-  """Find the sensor serial port, scanning /dev/serial/by-id/ (stable) and /dev/ttyUSB* (fallback)."""
-  # Prefer /dev/serial/by-id/ — these paths are tied to the device hardware ID
-  # and don't change when other USB devices are plugged/unplugged
-  ports = sorted(glob.glob('/dev/serial/by-id/*'))
-  ports += sorted(glob.glob('/dev/ttyUSB*'))
-
+  """Find the correct serial port by scanning all available /dev/ttyUSB* devices."""
+  ports = sorted(glob.glob('/dev/serial/by-id/usb-1a86_USB2.0*'))
   if not ports:
     log('SERIAL | No USB devices found')
     return None
   log('SERIAL | Scanning ports: %s' % ', '.join(ports))
-
   for port in ports:
     try:
-      s = serial.Serial(port, SERIAL_BAUD, timeout=2)
-      # Send AT command to check if this is a modem — skip it if so
-      s.write(b'AT\r\n')
-      time.sleep(0.5)
-      resp = s.read_all()
+      s = serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=2)
       s.close()
-      if b'OK' in resp:
-        log('SERIAL | Skipping modem port: %s' % port)
-        continue
-      # Not a modem — this is the sensor device
       return port
     except Exception:
       continue
@@ -72,9 +60,10 @@ log('========== STARTING UP ==========')
 ser = None
 while ser is None:
   try:
-    port = find_serial_port()
+    #port = find_serial_port()
+    port = SERIAL_PORT
     if port:
-      ser = serial.Serial(port, SERIAL_BAUD)
+      ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
       log('SERIAL | Connected on %s' % port)
     else:
       time.sleep(1)
@@ -166,9 +155,10 @@ def reconnect_serial():
   backoff = 1
   while True:
     try:
-      port = find_serial_port()
+      #port = find_serial_port()
+      port = SERIAL_PORT
       if port:
-        ser = serial.Serial(port, SERIAL_BAUD)
+        ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
         log('SERIAL | Reconnected on %s' % port)
         return
       else:

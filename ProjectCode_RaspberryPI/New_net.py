@@ -1,240 +1,385 @@
 #!/usr/bin/python3
+"""LEWS Pi gateway: read sensor packets from USB-serial, forward over TCP.
+
+Reliability layers (see usr-bin-python3-import-sys-wild-meerkat.md plan):
+  1. timeouts on every blocking syscall (serial, socket)
+  2. in-process watchdog that os._exit(1) on loop stall
+  3. systemd Restart=always (see lews-net.service)
+"""
+
 import sys
-# Force line-buffered stdout so logs appear immediately even when
-# running via nohup, systemd, or redirected to a file
 sys.stdout.reconfigure(line_buffering=True)
-import time
+
+import fcntl
+import logging
+import logging.handlers
 import os
-import select
 import socket
-import json
-import glob
+import threading
+import time
 from datetime import datetime
-import NodeValue
+
 import serial
 import termios
 
+import NodeValue
+
+
+# --- Configuration ---
 SERIAL_PORT = "/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0"
 SERIAL_BAUD = 115200
+SERIAL_TIMEOUT = 2            # bounds ser.read()
+
 SERVER_IP = "103.37.200.35"
 SERVER_PORT = 5000
 SOCKET_TIMEOUT = 10
-MAX_RETRIES = 2
-INITIAL_BACKOFF = 2  # seconds
 
-# Use the script's own directory for log files so there are no permission issues
+WATCHDOG_TIMEOUT = 60         # max time main loop may stall before we self-kill
+FLUSH_INTERVAL = 30           # background buffer drain cadence
+
+RX_BUFFER_MAX = 64 * 1024
+MAX_UNSENT_BYTES = 50 * 1024 * 1024   # 50 MB hard cap on unsent_data.txt
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(SCRIPT_DIR, 'log.txt')
 UNSENT_FILE = os.path.join(SCRIPT_DIR, 'unsent_data.txt')
 BACKUP_FILE = os.path.join(SCRIPT_DIR, 'all_received_data.txt')
 
-global ser
-global received_data
-received_data = ""
+USBDEVFS_RESET = 21780        # _IO('U', 20)
 
 
-def log(msg):
-  """Print a timestamped, flush-safe log message."""
-  print('[%s] %s' % (datetime.now().strftime('%H:%M:%S'), msg), flush=True)
+# --- Logging setup ---
+def _make_logger(name, path, to_console):
+    lg = logging.getLogger(name)
+    lg.setLevel(logging.INFO)
+    lg.propagate = False
+    fh = logging.handlers.RotatingFileHandler(
+        path, maxBytes=1_048_576, backupCount=5)
+    fh.setFormatter(logging.Formatter('%(asctime)s %(message)s',
+                                      datefmt='%Y-%m-%d %H:%M:%S'))
+    lg.addHandler(fh)
+    if to_console:
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setFormatter(logging.Formatter('[%(asctime)s] %(message)s',
+                                          datefmt='%H:%M:%S'))
+        lg.addHandler(ch)
+    return lg
 
 
-def find_serial_port():
-  """Find the correct serial port by scanning all available /dev/ttyUSB* devices."""
-  ports = sorted(glob.glob('/dev/serial/by-id/usb-1a86_USB2.0*'))
-  if not ports:
-    log('SERIAL | No USB devices found')
-    return None
-  log('SERIAL | Scanning ports: %s' % ', '.join(ports))
-  for port in ports:
+log_event = _make_logger('lews.event', LOG_FILE, to_console=True)
+log_backup = _make_logger('lews.backup', BACKUP_FILE, to_console=False)
+
+
+# --- Watchdog (Layer 2) ---
+last_loop_tick = time.monotonic()
+
+
+def watchdog_loop():
+    """Force-exit the process if the main loop stalls. systemd will restart us."""
+    while True:
+        time.sleep(5)
+        idle = time.monotonic() - last_loop_tick
+        if idle > WATCHDOG_TIMEOUT:
+            try:
+                log_event.critical(
+                    'WATCHDOG | hang detected, last tick %.1fs ago, killing process',
+                    idle)
+            except Exception:
+                pass
+            os._exit(1)
+
+
+# --- USB best-effort reset (bonus mitigation for CH340 wedge) ---
+def _resolve_usb_devnode(tty_by_id_path):
+    """Map /dev/serial/by-id/... -> /dev/bus/usb/BBB/DDD, or None."""
     try:
-      s = serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=2)
-      s.close()
-      return port
+        real_tty = os.path.realpath(tty_by_id_path)
+        tty_name = os.path.basename(real_tty)
+        sysfs = os.path.realpath('/sys/class/tty/%s/device/../..' % tty_name)
+        with open(os.path.join(sysfs, 'busnum')) as f:
+            busnum = int(f.read().strip())
+        with open(os.path.join(sysfs, 'devnum')) as f:
+            devnum = int(f.read().strip())
+        return '/dev/bus/usb/%03d/%03d' % (busnum, devnum)
     except Exception:
-      continue
-  return None
+        return None
 
 
-# --- Connect to serial port ---
-log('========== STARTING UP ==========')
-ser = None
-while ser is None:
-  try:
-    #port = find_serial_port()
-    port = SERIAL_PORT
-    if port:
-      ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
-      log('SERIAL | Connected on %s' % port)
-    else:
-      time.sleep(1)
-  except Exception as e:
-    log('SERIAL | Connection failed: %s' % e)
-    time.sleep(1)
-
-
-def log_to_file(message):
-  """Safely write a message with timestamp to the log file."""
-  try:
-    with open(LOG_FILE, 'a+') as f:
-      f.write('%s %s\n' % (datetime.now(), message))
-  except Exception:
-    log('WARNING | Could not write to log file')
-
-
-def save_backup(data):
-  """Save every received data packet to backup file, regardless of send status."""
-  try:
-    with open(BACKUP_FILE, 'a+') as f:
-      f.write('%s|%s\n' % (datetime.now(), data))
-  except Exception:
-    log('WARNING | Could not write to backup file')
-
-
-def buffer_unsent_data(data_with_time):
-  """Save timestamped data that could not be sent so it can be retried later."""
-  try:
-    with open(UNSENT_FILE, 'a+') as f:
-      f.write(data_with_time + '\n')
-  except Exception:
-    log('WARNING | Could not buffer unsent data')
-
-
-def send_to_server(data):
-  """Send data to server with retry and exponential backoff. Returns True on success."""
-  backoff = INITIAL_BACKOFF
-  for attempt in range(MAX_RETRIES):
+def usb_reset_best_effort():
+    """Try USBDEVFS_RESET on the CH340. Needs write perm on /dev/bus/usb/..."""
+    node = _resolve_usb_devnode(SERIAL_PORT)
+    if not node:
+        log_event.info('USB    | reset skipped: could not resolve devnode')
+        return False
     try:
-      host = socket.gethostbyname(SERVER_IP)
-      conn = socket.create_connection((host, SERVER_PORT), SOCKET_TIMEOUT)
-      conn.sendall(bytes(data, 'utf-8'))
-      conn.close()
-      return True
+        fd = os.open(node, os.O_WRONLY)
+        try:
+            fcntl.ioctl(fd, USBDEVFS_RESET, 0)
+            log_event.info('USB    | reset OK on %s', node)
+            return True
+        finally:
+            os.close(fd)
+    except PermissionError:
+        log_event.info('USB    | reset skipped: no permission on %s', node)
+        return False
     except Exception as e:
-      log('SEND   | Attempt %d/%d failed: %s' % (attempt + 1, MAX_RETRIES, e))
-      if attempt < MAX_RETRIES - 1:
-        log('SEND   | Retrying in %ds...' % backoff)
-        time.sleep(backoff)
-        backoff = min(backoff * 2, 60)
-  return False
+        log_event.warning('USB    | reset failed: %s', e)
+        return False
 
 
-def flush_unsent_data():
-  """Try to send any previously buffered data."""
-  try:
-    if not os.path.exists(UNSENT_FILE):
-      return
-    with open(UNSENT_FILE, 'r') as f:
-      lines = f.readlines()
-    if not lines:
-      return
-
-    log('BUFFER | Flushing %d buffered packets...' % len(lines))
-    remaining = []
-    sent = 0
-    for line in lines:
-      line = line.strip()
-      if not line:
-        continue
-      # Send the full line (timestamp|sensordata) so server gets the Pi timestamp
-      if send_to_server(line):
-        sent += 1
-      else:
-        remaining.append(line)
-
-    with open(UNSENT_FILE, 'w') as f:
-      for line in remaining:
-        f.write(line + '\n')
-    log('BUFFER | Flushed %d, remaining %d' % (sent, len(remaining)))
-  except Exception as e:
-    log('WARNING | Could not flush unsent data: %s' % e)
+# --- Serial connect / reconnect ---
+def open_serial():
+    return serial.Serial(SERIAL_PORT, SERIAL_BAUD, timeout=SERIAL_TIMEOUT)
 
 
 def reconnect_serial():
-  """Reconnect to the serial port, scanning all available USB ports."""
-  global ser
-  backoff = 1
-  while True:
+    """Block until serial is open again. Tries USB reset on persistent failure."""
+    backoff = 1
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            s = open_serial()
+            log_event.info('SERIAL | reconnected on %s', SERIAL_PORT)
+            return s
+        except Exception as e:
+            log_event.warning('SERIAL | reconnect failed (attempt %d): %s', attempt, e)
+            if attempt == 5:
+                usb_reset_best_effort()
+        time.sleep(backoff)
+        backoff = min(backoff * 2, 30)
+
+
+# --- TCP send (single attempt; flusher provides the retry cadence) ---
+def _set_keepalive(sock):
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+    for opt_name, value in (('TCP_KEEPIDLE', 30),
+                            ('TCP_KEEPINTVL', 10),
+                            ('TCP_KEEPCNT', 3)):
+        opt = getattr(socket, opt_name, None)
+        if opt is not None:
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, opt, value)
+            except OSError:
+                pass
+
+
+def send_to_server(payload):
+    """One send attempt with timeout. Returns True on success, False on any failure."""
+    sock = None
     try:
-      #port = find_serial_port()
-      port = SERIAL_PORT
-      if port:
-        ser = serial.Serial(SERIAL_PORT, SERIAL_BAUD)
-        log('SERIAL | Reconnected on %s' % port)
+        sock = socket.create_connection((SERVER_IP, SERVER_PORT),
+                                        timeout=SOCKET_TIMEOUT)
+        sock.settimeout(SOCKET_TIMEOUT)
+        _set_keepalive(sock)
+        sock.sendall(payload.encode('utf-8'))
+        return True
+    except Exception as e:
+        log_event.warning('SEND   | failed: %s', e)
+        return False
+    finally:
+        if sock is not None:
+            try:
+                sock.close()
+            except Exception:
+                pass
+
+
+# --- Unsent-data buffer (thread-safe, disk-capped) ---
+unsent_lock = threading.Lock()
+
+
+def _trim_unsent_head_locked():
+    """Drop oldest lines if file exceeds the cap. Caller holds unsent_lock."""
+    try:
+        size = os.path.getsize(UNSENT_FILE)
+        if size <= MAX_UNSENT_BYTES:
+            return
+        with open(UNSENT_FILE, 'rb') as f:
+            data = f.read()
+        target = MAX_UNSENT_BYTES * 9 // 10   # trim to 90% so we don't trim on every append
+        excess = len(data) - target
+        cut = data.find(b'\n', excess)
+        data = b'' if cut == -1 else data[cut + 1:]
+        with open(UNSENT_FILE, 'wb') as f:
+            f.write(data)
+        log_event.warning('BUFFER | trimmed unsent file to %d bytes (cap %d)',
+                          len(data), MAX_UNSENT_BYTES)
+    except Exception as e:
+        log_event.warning('BUFFER | trim failed: %s', e)
+
+
+def buffer_unsent_data(line):
+    """Append a packet to the unsent buffer. Bounded by MAX_UNSENT_BYTES."""
+    with unsent_lock:
+        try:
+            with open(UNSENT_FILE, 'a+') as f:
+                f.write(line + '\n')
+            _trim_unsent_head_locked()
+        except Exception as e:
+            log_event.warning('BUFFER | could not append: %s', e)
+
+
+def flush_unsent_data():
+    """Drain unsent_data.txt by resending. Runs from flusher_loop."""
+    # Snapshot under lock then truncate, so the main thread's appends don't race.
+    with unsent_lock:
+        try:
+            if not os.path.exists(UNSENT_FILE) or os.path.getsize(UNSENT_FILE) == 0:
+                return
+            with open(UNSENT_FILE, 'r') as f:
+                snapshot = f.read()
+            open(UNSENT_FILE, 'w').close()
+        except Exception as e:
+            log_event.warning('BUFFER | snapshot failed: %s', e)
+            return
+
+    lines = [l for l in snapshot.splitlines() if l.strip()]
+    if not lines:
         return
-      else:
-        log('SERIAL | Waiting for device... retrying in %ds' % backoff)
-    except Exception as e:
-      log('SERIAL | Reconnect failed: %s, retrying in %ds' % (e, backoff))
-    time.sleep(backoff)
-    backoff = min(backoff * 2, 30)
+
+    log_event.info('BUFFER | attempting flush of %d packets', len(lines))
+    sent = 0
+    remaining = []
+    for i, line in enumerate(lines):
+        if send_to_server(line):
+            sent += 1
+        else:
+            remaining = lines[i:]   # stop on first failure; rest stay buffered
+            break
+
+    if not remaining:
+        log_event.info('BUFFER | flushed all %d', sent)
+        return
+
+    # Prepend `remaining` back, ahead of anything the main thread appended.
+    with unsent_lock:
+        try:
+            appended = ''
+            if os.path.exists(UNSENT_FILE):
+                with open(UNSENT_FILE, 'r') as f:
+                    appended = f.read()
+            with open(UNSENT_FILE, 'w') as f:
+                for l in remaining:
+                    f.write(l + '\n')
+                if appended:
+                    f.write(appended)
+            log_event.info('BUFFER | flushed %d, %d kept', sent, len(remaining))
+            _trim_unsent_head_locked()
+        except Exception as e:
+            log_event.warning('BUFFER | rewrite failed: %s', e)
 
 
-# --- Main loop ---
-send_failures = 0
-packet_count = 0
+def flusher_loop():
+    while True:
+        time.sleep(FLUSH_INTERVAL)
+        try:
+            flush_unsent_data()
+        except Exception as e:
+            log_event.warning('BUFFER | flusher iteration failed: %s', e)
 
-while True:
-    try:
-      ser.flush()
-      time.sleep(1)
 
-      data = ser.read()
-      time.sleep(0.05)
-      data_left = ser.inWaiting()
-      data += ser.read(data_left)
-      received_data = data.decode()
+# --- Frame extraction ---
+def extract_frames(buf):
+    """Pull complete &...! frames from a raw byte buffer.
 
-      index_strt = received_data.find('&')
-      index_end = received_data.find('!')
+    Returns (frames, remaining). `frames` are decoded text payloads (bytes
+    between & and !). `remaining` is the unconsumed tail (possibly a partial
+    frame) to carry into the next call.
+    """
+    frames = []
+    while True:
+        start = buf.find(b'&')
+        if start == -1:
+            return frames, b''
+        end = buf.find(b'!', start + 1)
+        if end == -1:
+            return frames, buf[start:]
+        raw = buf[start + 1:end]
+        buf = buf[end + 1:]
+        text = raw.decode('utf-8', errors='replace')
+        # Match original validation: payload must contain exactly two '@'
+        # and no embedded framing characters.
+        if text.count('@') != 2 or '&' in text or '!' in text:
+            log_event.warning('RECV   | malformed frame discarded: %r', text[:120])
+            continue
+        frames.append(text)
 
-      if (index_end == -1 or index_strt == -1 or
-          received_data.count('@') != 2 or
-          received_data[-1] != '!' or
-          received_data.count('!') != 1 or
-          received_data.count('&') != 1):
-        continue
 
-      received_data = received_data[index_strt + 1:index_end]
-      packet_count += 1
+# --- Main ---
+def main():
+    global last_loop_tick
 
-      # Capture Pi timestamp at the moment data is read from serial
-      pi_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-      # Format: timestamp|sensordata — this timestamp travels with the data
-      data_with_time = '%s|%s' % (pi_timestamp, received_data)
+    log_event.info('========== STARTING UP ==========')
 
-      log('RECV   | #%d | %s' % (packet_count, received_data))
+    threading.Thread(target=watchdog_loop, name='watchdog', daemon=True).start()
+    threading.Thread(target=flusher_loop, name='flusher', daemon=True).start()
 
-      # Always save to backup first — this is the data safety net
-      save_backup(received_data)
+    ser = None
+    while ser is None:
+        try:
+            ser = open_serial()
+            log_event.info('SERIAL | connected on %s', SERIAL_PORT)
+        except Exception as e:
+            log_event.warning('SERIAL | initial connect failed: %s', e)
+            time.sleep(1)
 
-      c = NodeValue.ContentFromClient(received_data)
-      c.sensorvalues()
+    rx_buffer = b''
+    packet_count = 0
+    send_failures = 0
 
-      # Try to flush old buffered data first (piggyback on connectivity)
-      flush_unsent_data()
+    while True:
+        last_loop_tick = time.monotonic()
+        try:
+            chunk = ser.read(4096)
+            if not chunk:
+                continue
 
-      # Send current data with Pi timestamp
-      if send_to_server(data_with_time):
-        send_failures = 0
-        log('SEND   | OK | #%d sent to %s:%d' % (packet_count, SERVER_IP, SERVER_PORT))
-      else:
-        send_failures += 1
-        log('SEND   | FAILED | #%d buffered locally (total failures: %d)' % (packet_count, send_failures))
-        log_to_file('SEND FAILED: ' + received_data)
-        buffer_unsent_data(data_with_time)
+            rx_buffer += chunk
+            if len(rx_buffer) > RX_BUFFER_MAX:
+                dropped = len(rx_buffer) - RX_BUFFER_MAX
+                rx_buffer = rx_buffer[-RX_BUFFER_MAX:]
+                log_event.warning('RECV   | rx buffer overflow, dropped %d bytes', dropped)
 
-    except (serial.SerialException, termios.error, OSError) as e:
-      log('SERIAL | DISCONNECTED: %s' % e)
-      log_to_file('SERIAL ERROR: ' + str(e))
-      reconnect_serial()
-      received_data = ""
+            frames, rx_buffer = extract_frames(rx_buffer)
 
-    except Exception as e:
-      log('ERROR  | %s' % e)
-      log_to_file(str(e))
-      if len(received_data) > 10:
-        pi_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        data_with_time = '%s|%s' % (pi_timestamp, received_data)
-        log_to_file('UNSENT: ' + received_data)
-        buffer_unsent_data(data_with_time)
-      received_data = ""
+            for payload in frames:
+                packet_count += 1
+                pi_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                data_with_time = '%s|%s' % (pi_ts, payload)
+
+                log_event.info('RECV   | #%d | %s', packet_count, payload)
+                log_backup.info('%s', data_with_time)
+
+                try:
+                    NodeValue.ContentFromClient(payload).sensorvalues()
+                except Exception as e:
+                    log_event.warning('NODEVAL| %s', e)
+
+                if send_to_server(data_with_time):
+                    if send_failures:
+                        log_event.info('SEND   | recovered after %d failures', send_failures)
+                    send_failures = 0
+                    log_event.info('SEND   | OK | #%d -> %s:%d',
+                                   packet_count, SERVER_IP, SERVER_PORT)
+                else:
+                    send_failures += 1
+                    log_event.warning('SEND   | #%d buffered (consecutive failures: %d)',
+                                      packet_count, send_failures)
+                    buffer_unsent_data(data_with_time)
+
+        except (serial.SerialException, termios.error, OSError) as e:
+            log_event.warning('SERIAL | disconnected: %s', e)
+            try:
+                ser.close()
+            except Exception:
+                pass
+            ser = reconnect_serial()
+            rx_buffer = b''
+
+        except Exception as e:
+            log_event.error('ERROR  | %s', e)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,4 +1,3 @@
-# This is the latest code till 25/05/2020
 import select
 import socket
 import sys

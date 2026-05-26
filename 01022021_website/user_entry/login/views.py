@@ -87,33 +87,80 @@ def logout(request):
 #23.10.2020
 
 def f1(email):
-  print('i have called')
-  query="select distinct(sensor_type) from sensor_info"   
-  cursor.execute(query)
-  node_records = cursor.fetchall()
-  sensor="<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'><input class='custom-control-input' id='allsen' name='st' type='checkbox' value='all'>" \
-         "<label class='cursor-pointer font-italic d-block custom-control-label' for='allsen'>All</label></div></li>"
-  count=1
-  for row in node_records:
-    sensor=sensor+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
-    for col in row:
-      sensor=sensor+"<input class='custom-control-input' id='"+col+"' name='st' type='checkbox' value='"+col+"'>" \
-            "<label class='cursor-pointer font-italic d-block custom-control-label' for='"+col+"'>"+col.upper()+"</label></div></li>"
-  count=count+1  
-
-
-  query="select node_id,location,name from node where node_id in (select node_id from node,u_status where node.location=u_status.location and email_id='"+email+"')"   
-  cursor.execute(query)
-  node_records = cursor.fetchall()
-  location="<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'><input class='custom-control-input' id='allloc' name='loc' type='checkbox' value='all'>" \
-         "<label class='cursor-pointer font-italic d-block custom-control-label' for='allloc'>All</label></div></li>"
-  count=1
-  for row in node_records:
-    location=location+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
-    location=location+"<input class='custom-control-input' id='"+row[0]+"' name='loc' type='checkbox' value='"+row[0]+"'>" \
-            "<label class='cursor-pointer font-italic d-block custom-control-label' for='"+row[0]+"'>"+row[1].upper()+'@'+row[2].upper()+"</label></div></li>"
-    count=count+1
-  return sensor,location
+    print('i have called')
+    
+    # 1. Generate Sensor Checkboxes
+    query = "select distinct(sensor_type) from sensor_info"   
+    cursor.execute(query)
+    node_records = cursor.fetchall()
+    
+    sensor = ""
+    for row in node_records:
+        for col in row:
+            sensor_name = col.lower()
+            icon = 'fa-microchip'
+            if sensor_name == 'rain guage': icon = 'fa-cloud-rain'
+            elif sensor_name == 'pitch': icon = 'fa-ruler-combined'
+            elif sensor_name == 'pressure': icon = 'fa-tachometer-alt'
+            elif sensor_name == 'voltage': icon = 'fa-bolt'
+            elif sensor_name == 'rainfall': icon = 'fa-cloud-showers-heavy'
+            elif sensor_name == 'vols': icon = 'fa-heartbeat'
+            elif sensor_name == 'roll': icon = 'fa-sync-alt'
+            elif sensor_name == 'moisture': icon = 'fa-tint'
+            
+            sensor += (
+                f"<li><label class='styled-card' for='{col}'>"
+                f"<div class='styled-card-content'>"
+                f"<input class='styled-checkbox' id='{col}' name='st' type='checkbox' value='{col}'>"
+                f"<i class='fas {icon} styled-icon'></i>"
+                f"<span class='styled-text'>{col.upper()}</span>"
+                f"</div>"
+                f"</label></li>"
+            )
+            
+    # Always prepend 'ALL' to the beginning of Sensor Types
+    sensor = (
+        "<li><label class='styled-card' for='allsen'>"
+        "<div class='styled-card-content'>"
+        "<input class='styled-checkbox' id='allsen' name='st' type='checkbox' value='all'>"
+        "<i class='fas fa-layer-group styled-icon'></i>"
+        "<span class='styled-text'>ALL</span>"
+        "</div>"
+        "</label></li>"
+    ) + sensor
+            
+    # 2. Generate Location Checkboxes
+    query = "select node_id,location,name from node where node_id in (select node_id from node,u_status where node.location=u_status.location and email_id='"+email+"')"   
+    cursor.execute(query)
+    node_records = cursor.fetchall()
+    
+    location = ""
+    for row in node_records:
+        node_id, loc_name, name = row[0], row[1], row[2]
+        location += (
+            f"<li><label class='styled-card' for='{node_id}'>"
+            f"<div class='styled-card-content'>"
+            f"<input class='styled-checkbox' id='{node_id}' name='loc' type='checkbox' value='{node_id}'>"
+            f"<i class='fas fa-map-marker-alt styled-icon'></i>"
+            f"<span class='styled-text'>{loc_name.upper()}@{name.upper()}</span>"
+            f"</div>"
+            f"<i class='fas fa-chevron-right styled-arrow'></i>"
+            f"</label></li>"
+        )
+        
+    # Always prepend 'ALL' to the beginning of Locations
+    location = (
+        "<li><label class='styled-card' for='allloc'>"
+        "<div class='styled-card-content'>"
+        "<input class='styled-checkbox' id='allloc' name='loc' type='checkbox' value='all'>"
+        "<i class='fas fa-th-large styled-icon'></i>"
+        "<span class='styled-text'>ALL</span>"
+        "</div>"
+        "<i class='fas fa-chevron-right styled-arrow'></i>"
+        "</label></li>"
+    ) + location
+        
+    return sensor, location
 
 def prepareQuery(word,data):
   content=word+' in ('

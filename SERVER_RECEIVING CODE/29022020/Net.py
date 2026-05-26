@@ -2,19 +2,27 @@ import select
 import socket
 import sys
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import Sensorinformation
 import NodeValue
 from datetime import datetime
 
-# Force unbuffered stdout so logs never appear "stuck"
-# This is the root cause of the hung-log issue: Python block-buffers
-# stdout when not attached to an interactive terminal (e.g. nohup, screen,
-# or pipe). Prints accumulate silently in a memory buffer and only appear
-# when the buffer fills (~4-8 KB) or the process exits / receives Ctrl+C.
+# Force unbuffered stdout so logs never appear "stuck".
+# Without this, Python block-buffers stdout when not attached to an interactive
+# terminal (nohup, screen, pipe). Prints accumulate silently in a memory buffer
+# and only appear when it fills (~4-8 KB) or the process exits / receives Ctrl+C.
 sys.stdout.reconfigure(line_buffering=True)
 
 # Shared lock for all print/log calls across threads to prevent interleaved output
 _print_lock = threading.Lock()
+# Workers now run truly in parallel, so concurrent append-mode writes to A.txt
+# can interleave on some platforms. Serialize them.
+_file_lock = threading.Lock()
+
+# Bounded worker pool. Caps thread count even under sustained DB stalls so the
+# main select loop keeps getting CPU and the listen backlog never overflows.
+# max_workers matches NodeValue._DB_POOL.maxconn so workers don't starve on getconn().
+_worker_pool = ThreadPoolExecutor(max_workers=16, thread_name_prefix="ingest")
 
 
 def log(msg):
@@ -34,8 +42,9 @@ server_address = ('localhost', 5000)
 server_address = ('192.168.104.84', 5000)
 server.bind(server_address)
 
-# Listen for incoming connections
-server.listen(128)
+# Listen for incoming connections. SOMAXCONN gives the kernel's max queue —
+# margin for bursty arrivals (e.g. all Pis reconnecting after a network blip).
+server.listen(socket.SOMAXCONN)
 
 inputs = [server]
 outputs = []
@@ -64,13 +73,14 @@ def process_data_async(process_data):
         c = NodeValue.ContentFromClient(sensor_data, pi_timestamp)
         c.sensorvalues()
 
-        with open('A.txt', 'a+') as f:
-            now = datetime.now()
-            f.write('%s' % now)
-            f.write("\r\n")
-            f.write(sensor_data)
-            if sensor_data[-1] == ')':
-                f.write('\n')
+        with _file_lock:
+            with open('A.txt', 'a+') as f:
+                now = datetime.now()
+                f.write('%s' % now)
+                f.write("\r\n")
+                f.write(sensor_data)
+                if sensor_data[-1] == ')':
+                    f.write('\n')
         log('SAVED to A.txt | %s' % sensor_data[:60])
     except Exception as e:
         log('ERROR processing data: %s' % e)
@@ -78,46 +88,60 @@ def process_data_async(process_data):
 
 active_connections = 0
 
-while inputs:
-    readable, writable, exceptional = select.select(inputs, outputs, inputs, 1)
-    for s in readable:
-        if s is server:
-            connection, client_address = s.accept()
-            connection.setblocking(0)
-            inputs.append(connection)
-            active_connections += 1
-            log('CONNECT from %s:%d | active=%d' % (client_address[0], client_address[1], active_connections))
-        else:
-            try:
-                data = s.recv(2000)
+try:
+    while inputs:
+        readable, writable, exceptional = select.select(inputs, outputs, inputs, 1)
+        for s in readable:
+            if s is server:
+                connection, client_address = s.accept()
+                connection.setblocking(0)
+                inputs.append(connection)
+                active_connections += 1
+                log('CONNECT from %s:%d | active=%d' % (client_address[0], client_address[1], active_connections))
+            else:
+                try:
+                    data = s.recv(2000)
 
-                if data:
-                    process_data = data.decode('utf-8').lower()
-                    if process_data.startswith("get"):
-                        continue
-                    log('RECV %d bytes | %s' % (len(process_data), process_data[:80]))
+                    if data:
+                        process_data = data.decode('utf-8').lower()
+                        if process_data.startswith("get"):
+                            continue
+                        log('RECV %d bytes | %s' % (len(process_data), process_data[:80]))
 
-                    # Process in a worker thread to keep the select loop free
-                    t = threading.Thread(target=process_data_async, args=(process_data,))
-                    t.daemon = True
-                    t.start()
-                else:
-                    inputs.remove(s)
+                        # Submit to the bounded worker pool. Falls back to running
+                        # inline if the executor is shutting down.
+                        try:
+                            _worker_pool.submit(process_data_async, process_data)
+                        except RuntimeError:
+                            process_data_async(process_data)
+                    else:
+                        inputs.remove(s)
+                        s.close()
+                        active_connections -= 1
+                        log('DISCONNECT | active=%d' % active_connections)
+
+                except Exception as e:
+                    log('ERROR on client socket: %s' % e)
+                    if s in inputs:
+                        inputs.remove(s)
                     s.close()
                     active_connections -= 1
-                    log('DISCONNECT | active=%d' % active_connections)
 
-            except Exception as e:
-                log('ERROR on client socket: %s' % e)
-                if s in inputs:
-                    inputs.remove(s)
-                s.close()
-                active_connections -= 1
-
-    for s in exceptional:
-        log('ERROR exceptional condition on socket')
-        inputs.remove(s)
-        if s in outputs:
-            outputs.remove(s)
-        s.close()
-        active_connections -= 1
+        for s in exceptional:
+            log('ERROR exceptional condition on socket')
+            inputs.remove(s)
+            if s in outputs:
+                outputs.remove(s)
+            s.close()
+            active_connections -= 1
+except KeyboardInterrupt:
+    log('SHUTDOWN requested')
+finally:
+    try:
+        server.close()
+    except Exception:
+        pass
+    # Drop queued work; in-flight tasks have a 10s statement_timeout backstop.
+    _worker_pool.shutdown(wait=False, cancel_futures=True)
+    NodeValue.shutdown_pool()
+    log('SHUTDOWN complete')

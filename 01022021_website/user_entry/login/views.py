@@ -135,8 +135,10 @@ def f1(email):
     node_records = cursor.fetchall()
     
     location = ""
+    state_name_for_map = "kerala" # Default fallback
     for row in node_records:
         node_id, loc_name, name = row[0], row[1], row[2]
+        state_name_for_map = loc_name.lower()
         location += (
             f"<li><label class='styled-card' for='{node_id}'>"
             f"<div class='styled-card-content'>"
@@ -148,8 +150,9 @@ def f1(email):
             f"</label></li>"
         )
         
-    # Always prepend 'ALL' to the beginning of Locations
+    # Always prepend 'ALL' to the beginning of Locations, along with the state data
     location = (
+        f"<input type='hidden' id='user_state_data' value='{state_name_for_map}'>"
         "<li><label class='styled-card' for='allloc'>"
         "<div class='styled-card-content'>"
         "<input class='styled-checkbox' id='allloc' name='loc' type='checkbox' value='all'>"

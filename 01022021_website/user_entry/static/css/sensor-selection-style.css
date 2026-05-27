@@ -400,6 +400,7 @@
     display: flex;
     align-items: center;
     gap: var(--sel-space-md);
+    white-space: nowrap;
 }
 
 .section-icon {
@@ -1232,3 +1233,77 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator:hover {
     }
 }
 
+/* ===== MONITORING LOCATIONS OVERVIEW MAP ===== */
+.map-overview-container {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background: var(--sel-gray-100);
+}
+
+.terrain-map {
+    width: 100%;
+    height: 380px;
+    display: block;
+    object-fit: cover;
+    object-position: center center;
+}
+
+.map-pin-wrapper {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transform: translate(-12px, -24px);
+    z-index: 10;
+}
+
+.map-pin-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--sel-accent-500);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    position: relative;
+    box-shadow: -2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.map-pin-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    background: #000;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.map-pin-badge {
+    background: #1c1c1c;
+    color: #fff;
+    font-size: 0.70rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--sel-font-primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.map-overlay-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.65);
+    color: var(--sel-white);
+    padding: 10px 15px;
+    font-size: 0.85rem;
+    font-family: var(--sel-font-secondary);
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(2px);
+}

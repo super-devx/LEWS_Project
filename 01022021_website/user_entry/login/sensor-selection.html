@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +15,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap"
+        rel="stylesheet">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
@@ -23,6 +26,7 @@
     <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
 </head>
+
 <body>
     <!-- Navigation -->
     {% include 'navbar-include.html' %}
@@ -34,96 +38,118 @@
             <div class="bg-pattern"></div>
         </div>
 
-    <!-- Progress Indicator -->
-    <div class="container mt-4">
-        <div class="progress-steps">
-            <div class="step completed">
-                <div class="step-label">Login</div>
-            </div>
-            <div class="step active">
-                <div class="step-label">Select Filters</div>
-            </div>
-            <div class="step">
-                <div class="step-label"></div>
+        <!-- Progress Indicator -->
+        <div class="container mt-4">
+            <div class="progress-steps">
+                <div class="step completed">
+                    <div class="step-label">Login</div>
+                </div>
+                <div class="step active">
+                    <div class="step-label">Select Filters</div>
+                </div>
+                <div class="step">
+                    <div class="step-label"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Heading Section -->
-    <div class="container text-center" style="margin-top: 1.5rem; margin-bottom: 2rem; position: relative; z-index: 10;">
-        <h2 class="fw-bold mb-0" style="color: #0f1623; font-family: 'Poppins', sans-serif; font-size: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 20px;">
-            <div style="display: flex; align-items: center;">
-                <span style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
-                <span style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-left: 8px;"></span>
-            </div>
-            Node and Sensor Selection
-            <div style="display: flex; align-items: center;">
-                <span style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-right: 8px;"></span>
-                <span style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
-            </div>
-        </h2>
-    </div>
-
-    <!-- Main Selection Container -->
-    <div class="container selection-container">
-        <div class="selection-card">
-            <form method="post" action="fetch_info" id="sensorSelectionForm">
-                {% csrf_token %}
-                <input type="hidden" value="browser" name="val">
-
-                <!-- Sensor Type Selection -->
-                <div class="selection-section">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="fas fa-microchip me-2"></i>
-                            Sensor Types
-                        </h2>
-                        <p class="section-description">Select the types of sensors you want to monitor</p>
-                    </div>
-
-                    <div class="checkbox-grid">
-                        {% autoescape off %}
-                        {{ sensor }}
-                        {% endautoescape %}
-                    </div>
+        <!-- Heading Section -->
+        <div class="container text-center"
+            style="margin-top: 1.5rem; margin-bottom: 2rem; position: relative; z-index: 10;">
+            <h2 class="fw-bold mb-0"
+                style="color: #0f1623; font-family: 'Poppins', sans-serif; font-size: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 20px;">
+                <div style="display: flex; align-items: center;">
+                    <span
+                        style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
+                    <span
+                        style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-left: 8px;"></span>
                 </div>
-
-                <!-- Location Selection -->
-                <div class="selection-section mt-5">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="fas fa-map-marker-alt me-2"></i>
-                            Monitoring Locations
-                        </h2>
-                        <p class="section-description">Choose the geographic locations to monitor</p>
-                    </div>
-
-                    <div class="location-grid">
-                        {% autoescape off %}
-                        {{ location }}
-                        {% endautoescape %}
-                    </div>
+                Node and Sensor Selection
+                <div style="display: flex; align-items: center;">
+                    <span
+                        style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-right: 8px;"></span>
+                    <span
+                        style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
                 </div>
-
-                <!-- Selection Summary -->
-                <div class="selection-summary">
-                    <div class="summary-content">
-                        <i class="fas fa-check-circle summary-icon"></i>
-                        <span class="summary-text">
-                            <strong id="selected-count">0</strong> sensor(s) and <strong id="selected-locations">0</strong> location(s) selected
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Form Actions -->
-                <div class="form-actions">
-                    <button type="submit" class="btn-action btn-primary">
-                        <i class="fas fa-check-circle me-2"></i>Submit Selection
-                    </button>
-                </div>
-            </form>
+            </h2>
         </div>
-    </div>
+
+        <!-- Main Selection Container -->
+        <div class="container selection-container">
+            <div class="selection-card">
+                <form method="post" action="fetch_info" id="sensorSelectionForm">
+                    {% csrf_token %}
+                    <input type="hidden" value="browser" name="val">
+
+                    <!-- Sensor Type Selection -->
+                    <div class="selection-section">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-microchip me-2"></i>
+                                Sensor Types
+                            </h2>
+                            <p class="section-description">Select the types of sensors you want to monitor</p>
+                        </div>
+
+                        <div class="checkbox-grid">
+                            {% autoescape off %}
+                            {{ sensor }}
+                            {% endautoescape %}
+                        </div>
+                    </div>
+
+                    <!-- Monitoring Locations Overview -->
+                    <div class="selection-section mt-4 mb-5">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-map me-2" style="color: var(--sel-accent-500);"></i>
+                                Monitoring Locations Overview
+                            </h2>
+                        </div>
+                        <div class="map-overview-container" id="mapOverview">
+                            <img src="{% static 'images/slopes/kerala.jpg' %}" id="stateMapImage" alt="Terrain Map"
+                                class="terrain-map">
+                            <div id="pinsContainer"></div>
+                        </div>
+                    </div>
+
+                    <!-- Location Selection -->
+                    <div class="selection-section">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                Monitoring Locations
+                            </h2>
+                            <p class="section-description">Choose the geographic locations to monitor</p>
+                        </div>
+
+                        <div class="location-grid">
+                            {% autoescape off %}
+                            {{ location }}
+                            {% endautoescape %}
+                        </div>
+                    </div>
+
+                    <!-- Selection Summary -->
+                    <div class="selection-summary">
+                        <div class="summary-content">
+                            <i class="fas fa-check-circle summary-icon"></i>
+                            <span class="summary-text">
+                                <strong id="selected-count">0</strong> sensor(s) and <strong
+                                    id="selected-locations">0</strong> location(s) selected
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-action btn-primary">
+                            <i class="fas fa-check-circle me-2"></i>Submit Selection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 
     <!-- Footer -->
@@ -140,7 +166,7 @@
 
     <!-- Custom JavaScript -->
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Update selection count
             function updateSelectionCount() {
                 const sensorCount = $('input[name="st"]:checked').length;
@@ -151,7 +177,7 @@
             }
 
             // Handle "All Sensors" checkbox
-            $('#allsen').on('change', function() {
+            $('#allsen').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('input[name="st"]').not('#allsen').prop('checked', false);
                 }
@@ -159,7 +185,7 @@
             });
 
             // Uncheck "All Sensors" when individual sensor is selected
-            $('input[name="st"]').not('#allsen').on('change', function() {
+            $('input[name="st"]').not('#allsen').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('#allsen').prop('checked', false);
                 }
@@ -167,7 +193,7 @@
             });
 
             // Handle "All Locations" checkbox
-            $('#allloc').on('change', function() {
+            $('#allloc').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('input[name="loc"]').not('#allloc').prop('checked', false);
                 }
@@ -175,7 +201,7 @@
             });
 
             // Uncheck "All Locations" when individual location is selected
-            $('input[name="loc"]').not('#allloc').on('change', function() {
+            $('input[name="loc"]').not('#allloc').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('#allloc').prop('checked', false);
                 }
@@ -183,7 +209,7 @@
             });
 
             // Form validation
-            $('#sensorSelectionForm').on('submit', function(e) {
+            $('#sensorSelectionForm').on('submit', function (e) {
                 const sensorSelected = $('input[name="st"]:checked').length > 0;
                 const locationSelected = $('input[name="loc"]:checked').length > 0;
 
@@ -207,16 +233,91 @@
             updateSelectionCount();
 
             // Add animation on list item click
-            $('.list-group-item').on('click', function() {
+            $('.list-group-item').on('click', function () {
                 $(this).addClass('card-clicked');
                 setTimeout(() => {
                     $(this).removeClass('card-clicked');
                 }, 300);
             });
+            // Map Overview Config and Initialization
+            const stateMapConfig = {
+                'kerala': {
+                    image: '{% static "images/slopes/kerala.jpg" %}',
+                    pins: {
+                        'N1': { top: '35%', left: '75%' },
+                        'N2': { top: '50%', left: '85%' },
+                        'N3': { top: '60%', left: '70%' },
+                        'N4': { top: '75%', left: '45%' },
+                        'N5': { top: '25%', left: '50%' },
+                        'N6': { top: '45%', left: '35%' },
+                        'N7': { top: '60%', left: '15%' },
+                        'N8': { top: '55%', left: '55%' },
+                        'N9': { top: '35%', left: '25%' },
+                        'N0': { top: '65%', left: '20%' }
+                    }
+                },
+                'kerela': {
+                    image: '{% static "images/slopes/kerala.jpg" %}',
+                    pins: {
+                        'N1': { top: '35%', left: '75%' },
+                        'N2': { top: '50%', left: '85%' },
+                        'N3': { top: '60%', left: '70%' },
+                        'N4': { top: '75%', left: '45%' },
+                        'N5': { top: '25%', left: '50%' },
+                        'N6': { top: '45%', left: '35%' },
+                        'N7': { top: '60%', left: '15%' },
+                        'N8': { top: '55%', left: '55%' },
+                        'N9': { top: '35%', left: '25%' },
+                        'N0': { top: '65%', left: '20%' }
+                    }
+                },
+                'sikkim': {
+                    image: '{% static "images/slopes/sikkim.jpg" %}',
+                    pins: {
+                        'N1': { top: '30%', left: '40%' },
+                        'N2': { top: '45%', left: '60%' },
+                        'N3': { top: '55%', left: '75%' },
+                        'N4': { top: '65%', left: '30%' }
+                    }
+                },
+                'himachal': {
+                    image: '{% static "images/slopes/himachal.jpg" %}',
+                    pins: {
+                        'N1': { top: '20%', left: '50%' },
+                        'N2': { top: '35%', left: '65%' },
+                        'N3': { top: '50%', left: '35%' },
+                        'N4': { top: '70%', left: '55%' },
+                        'N5': { top: '40%', left: '80%' }
+                    }
+                }
+            };
+
+            setTimeout(function () {
+                let userState = $('#user_state_data').val();
+                if (!userState) userState = 'kerala'; // fallback
+
+                userState = userState.toLowerCase().trim();
+
+                const config = stateMapConfig[userState];
+                if (config) {
+                    $('#stateMapImage').attr('src', config.image);
+
+                    let pinsHtml = '';
+                    for (const [nodeId, pos] of Object.entries(config.pins)) {
+                        pinsHtml += `<div class="map-pin-wrapper" style="top: ${pos.top}; left: ${pos.left};" title="Node ${nodeId}">
+                                        <div class="map-pin-icon"></div>
+                                        <span class="map-pin-badge">${nodeId}</span>
+                                     </div>`;
+                    }
+                    $('#pinsContainer').html(pinsHtml);
+                }
+            }, 100);
+
         });
     </script>
 
     <!-- Interactions JS -->
     <script src="{% static 'js/interactions.js' %}"></script>
 </body>
+
 </html>

@@ -38,20 +38,7 @@
             <div class="bg-pattern"></div>
         </div>
 
-        <!-- Progress Indicator -->
-        <div class="container mt-4">
-            <div class="progress-steps">
-                <div class="step completed">
-                    <div class="step-label">Login</div>
-                </div>
-                <div class="step active">
-                    <div class="step-label">Select Filters</div>
-                </div>
-                <div class="step">
-                    <div class="step-label"></div>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Heading Section -->
         <div class="container text-center"
@@ -302,14 +289,7 @@
                 if (config) {
                     $('#stateMapImage').attr('src', config.image);
 
-                    let pinsHtml = '';
-                    for (const [nodeId, pos] of Object.entries(config.pins)) {
-                        pinsHtml += `<div class="map-pin-wrapper" style="top: ${pos.top}; left: ${pos.left};" title="Node ${nodeId}">
-                                        <div class="map-pin-icon"></div>
-                                        <span class="map-pin-badge">${nodeId}</span>
-                                     </div>`;
-                    }
-                    $('#pinsContainer').html(pinsHtml);
+                    $('#pinsContainer').empty(); // Ensures no pins are shown
                 }
             }, 100);
 

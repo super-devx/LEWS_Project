@@ -69,7 +69,8 @@
     background: linear-gradient(180deg, #CFE7FF 0%, #DCEEFF 25%, #DCEEFF 75%, #BFDFFF 100%);
     font-family: var(--sel-font-secondary);
     position: relative;
-    overflow-x: hidden;
+    overflow-x: clip;
+    display: flow-root;
     z-index: 1;
     color: #1a2332;
 }

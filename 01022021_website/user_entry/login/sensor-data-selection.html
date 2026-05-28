@@ -39,7 +39,7 @@
     <!-- Main Selection Container -->
     <div class="container selection-container mt-5">
         <div class="selection-card">
-            <form method="post" action="add" id="dataConfigForm">
+            <form method="post" action="add" id="dataConfigForm" style="position: relative;">
                 {% csrf_token %}
                 <input type="hidden" value="{{ hidden_value }}" name="tt">
 
@@ -247,8 +247,15 @@
                     </div>
                 </div>
 
+                <!-- Sticky Back Button -->
+                <div style="position: sticky; bottom: 32px; width: max-content; z-index: 100; margin-bottom: -45px; transform: translateY(32px);">
+                    <button type="button" class="btn-action btn-primary" onclick="window.history.back()" style="box-shadow: 0 6px 16px rgba(255, 122, 61, 0.25);">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </button>
+                </div>
+
                 <!-- Form Actions -->
-                <div class="form-actions">
+                <div class="form-actions" style="justify-content: flex-end; position: relative;">
                     <button type="submit" class="btn-action btn-primary">
                         <i class="fas fa-chart-line me-2"></i>Generate Visualization
                     </button>

@@ -1109,8 +1109,9 @@
 }
 
 .time-range-card:hover {
-    border-color: var(--sel-accent-300);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.1);
+    border-color: #FF7A3D;
+    box-shadow: 0 6px 16px rgba(255, 122, 61, 0.15);
+    transform: translateY(-2px);
 }
 
 .time-range-label {
@@ -1148,17 +1149,22 @@
     font-family: var(--sel-font-secondary);
     font-size: 0.95rem;
     padding: 0.625rem 1rem;
-    border: 2px solid var(--sel-gray-200);
+    border: 2px solid rgba(173, 216, 255, 0.8);
     border-radius: var(--sel-radius-md);
-    background: var(--sel-white);
-    color: var(--sel-gray-800);
-    transition: all var(--sel-transition-base);
+    background: #ffffff;
+    color: #0F1623;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:hover,
+.form-select:hover {
+    border-color: #FF7A3D;
 }
 
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--sel-accent-500);
-    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+    border-color: #FF7A3D;
+    box-shadow: 0 0 0 4px rgba(255, 122, 61, 0.2);
     outline: none;
 }
 

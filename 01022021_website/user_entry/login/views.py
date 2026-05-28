@@ -286,9 +286,14 @@ def fetch_info(request):
   sensor_id_list=""
   count=1
   for row in sensor_id:
-    sensor_id_list=sensor_id_list+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
-    sensor_id_list=sensor_id_list+"<input class='custom-control-input' id='"+row+"' name='sensor_list_id' type='checkbox' value='"+row+"'>"
-    sensor_id_list=sensor_id_list+"<label class='cursor-pointer font-italic d-block custom-control-label' for='"+row+"'>"+row.upper()+"</label></div></li>"
+    sensor_id_list += (
+        f"<li><label class='styled-card' for='{row}'>"
+        f"<div class='styled-card-content'>"
+        f"<input class='styled-checkbox' id='{row}' name='sensor_list_id' type='checkbox' value='{row}'>"
+        f"<span class='styled-text'>{row.upper()}</span>"
+        f"</div>"
+        f"</label></li>"
+    )
   if ty=="app":
     return render(request,'inter.html',{'sensor_id':sensor_id_list,'hidden_value':'app'})
 

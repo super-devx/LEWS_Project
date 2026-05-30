@@ -283,6 +283,22 @@ def fetch_info(request):
     for col in row:
       sensor_id.append(col)
 
+  import re
+  def sort_sensor_key(s):
+    s_upper = s.upper()
+    n_match = re.search(r'_N(\d+)', s_upper)
+    n_val = int(n_match.group(1)) if n_match else 9999
+    
+    type_order = 99
+    if 'MS1' in s_upper: type_order = 1
+    elif 'PH1' in s_upper: type_order = 2
+    elif 'PRI' in s_upper or 'PR1' in s_upper: type_order = 3
+    elif 'ROI' in s_upper or 'RO1' in s_upper: type_order = 4
+    
+    return (n_val, type_order, s_upper)
+
+  sensor_id.sort(key=sort_sensor_key)
+
   sensor_id_list=""
   count=1
   for row in sensor_id:

@@ -22,6 +22,37 @@
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <style>
+        .sensor-limit-toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: #ffffff;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+            padding: 16px 24px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 9999;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #1e293b;
+            font-weight: 500;
+            font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif;
+        }
+        .sensor-limit-toast.show-toast {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .sensor-limit-toast .toast-icon {
+            color: #3b82f6;
+            font-size: 1.25rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -242,7 +273,7 @@
                     <div class="summary-content">
                         <i class="fas fa-info-circle summary-icon"></i>
                         <span class="summary-text">
-                            <strong id="selected-sensor-count">0</strong> sensor(s) selected for visualization
+                            <strong id="selected-sensor-count">0</strong> / 6 sensor(s) selected for visualization
                         </span>
                     </div>
                 </div>
@@ -285,14 +316,44 @@
             $('#from_date').val(today);
             $('#to_date').val(today);
 
+            // Toast Notification HTML injected into body
+            if ($('#sensorLimitToast').length === 0) {
+                $('body').append(`
+                    <div id="sensorLimitToast" class="sensor-limit-toast">
+                        <i class="fas fa-info-circle toast-icon"></i>
+                        <span>You can select a maximum of 6 sensors only.</span>
+                    </div>
+                `);
+            }
+
             // Update selection count
             function updateSelectionCount() {
                 const sensorCount = $('input[name="sensor_list_id"]:checked').length;
                 $('#selected-sensor-count').text(sensorCount);
             }
 
-            // Update count when checkboxes change
-            $('input[name="sensor_list_id"]').on('change', updateSelectionCount);
+            // Handle checkbox changes with strict limit
+            let toastTimeout;
+            $('input[name="sensor_list_id"]').on('change', function(e) {
+                const checkedSensors = $('input[name="sensor_list_id"]:checked');
+                
+                if (checkedSensors.length > 6) {
+                    // Prevent checking the 7th
+                    $(this).prop('checked', false);
+                    
+                    // Show custom toast
+                    const toast = $('#sensorLimitToast');
+                    toast.addClass('show-toast');
+                    
+                    // Auto-hide after 3 seconds
+                    clearTimeout(toastTimeout);
+                    toastTimeout = setTimeout(() => {
+                        toast.removeClass('show-toast');
+                    }, 3000);
+                }
+                
+                updateSelectionCount();
+            });
 
             // Form validation
             $('#dataConfigForm').on('submit', function(e) {

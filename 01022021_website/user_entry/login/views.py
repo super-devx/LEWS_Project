@@ -90,7 +90,7 @@ def f1(email):
     print('i have called')
     
     # 1. Generate Sensor Checkboxes
-    query = "select distinct(sensor_type) from sensor_info"   
+    query = "select distinct(sensor_type) from sensor_info order by sensor_type"   
     cursor.execute(query)
     node_records = cursor.fetchall()
     

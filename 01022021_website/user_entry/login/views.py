@@ -134,6 +134,14 @@ def f1(email):
     cursor.execute(query)
     node_records = cursor.fetchall()
     
+    import re
+    def sort_node_key(row):
+        name = row[2]
+        match = re.search(r'\d+', name)
+        return int(match.group()) if match else 9999
+        
+    node_records.sort(key=sort_node_key)
+    
     location = ""
     state_name_for_map = "kerala" # Default fallback
     for row in node_records:
@@ -263,20 +271,21 @@ def fetch_info(request):
     params.append(tenant_id)
 
   # Filter by sensor type if not 'all'
-  if len(num1) != 0 and 'all' not in num1:
+  if len(num1) != 0 and 'all' not in [str(x).strip().lower() for x in num1]:
     type_placeholders = ','.join(['%s'] * len(num1))
-    conditions.append("sensor_type IN (" + type_placeholders + ")")
-    params.extend(num1)
+    conditions.append("LOWER(TRIM(sensor_type)) IN (" + type_placeholders + ")")
+    params.extend([str(item).strip().lower() for item in num1])
 
   # Filter by allowed node_ids
   if len(node_id) != 0:
     node_placeholders = ','.join(['%s'] * len(node_id))
-    conditions.append("node_id IN (" + node_placeholders + ")")
-    params.extend(node_id)
+    conditions.append("LOWER(TRIM(node_id)) IN (" + node_placeholders + ")")
+    params.extend([str(item).strip().lower() for item in node_id])
 
   query += " AND ".join(conditions)
   cursor.execute(query, params)
   node_records = cursor.fetchall()
+
 
   sensor_id=[]
   for row in node_records:

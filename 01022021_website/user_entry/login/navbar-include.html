@@ -7,7 +7,7 @@
     <div class="nav-container">
         <!-- Logo and Branding -->
         <div class="nav-brand">
-            <a href="{% if user_name %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}" class="brand-link">
+            <a href="{% url 'home' %}" class="brand-link">
                 <i class="fas fa-mountain brand-icon"></i>
                 <div class="brand-text">
                     <span class="brand-title">LEWS</span>
@@ -28,7 +28,7 @@
             <ul class="nav-links">
                 <!-- Home -->
                 <li class="nav-item">
-                    <a href="{% if user_name %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}" class="nav-link" data-page="home">
+                    <a href="{% url 'home' %}" class="nav-link" data-page="home">
                         <i class="fas fa-home nav-icon"></i>
                         <span>Home</span>
                     </a>

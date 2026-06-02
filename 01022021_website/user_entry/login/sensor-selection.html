@@ -285,7 +285,18 @@
 
                 userState = userState.toLowerCase().trim();
 
-                const config = stateMapConfig[userState];
+                let matchedState = 'kerala';
+                if (userState.includes('himachal')) {
+                    matchedState = 'himachal';
+                } else if (userState.includes('sikkim')) {
+                    matchedState = 'sikkim';
+                } else if (userState.includes('kerala') || userState.includes('kerela')) {
+                    matchedState = 'kerela';
+                } else if (stateMapConfig[userState]) {
+                    matchedState = userState;
+                }
+
+                const config = stateMapConfig[matchedState];
                 if (config) {
                     $('#stateMapImage').attr('src', config.image);
 

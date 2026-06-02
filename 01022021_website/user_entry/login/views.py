@@ -701,7 +701,7 @@ def secondPartNew(request):
       ax = axes[rows, cols]
       counter=counter+1
       data=drawlist[key]
-      formatter = mdates.DateFormatter("%d-%m-%y ")
+      formatter = mdates.DateFormatter("%d\n%m\n%Y")
       locator = mdates.HourLocator(interval=int(duration))
       
       ax.plot(data['x'],data['y'])
@@ -723,6 +723,7 @@ def secondPartNew(request):
     except:
       pass
     plt.tight_layout()
+    print("X-TICK LABELS:", [t.get_text() for t in axes[0,0].get_xticklabels()])
     chart = get_graph(figure)
     from datetime import datetime
     now = datetime.now()
@@ -814,7 +815,7 @@ def secondPart(request):
     label = Labels[Dict["sensorid"][row]]
     # print('hekkio')
     # print(flag)
-    formatter = mdates.DateFormatter("%d-%m-%y")
+    formatter = mdates.DateFormatter("%d\n%m\n%Y")
     ax.xaxis.set_major_formatter(formatter)
     locator = mdates.HourLocator(interval=int(duration))
     ax.xaxis.set_major_locator(locator)
@@ -827,7 +828,7 @@ def secondPart(request):
 
     if len(set_ty) >= 2 and flag and ab:
       ax2 = ax.twinx()
-      formatter = mdates.DateFormatter("%d-%m-%y ")
+      formatter = mdates.DateFormatter("%d\n%m\n%Y")
       ax2.xaxis.set_major_formatter(formatter)
       locator = mdates.HourLocator(interval=int(duration))
       ax2.xaxis.set_major_locator(locator)
@@ -846,7 +847,7 @@ def secondPart(request):
     if len(set_ty) >= 2 and flag and flag1:
        ax3 = ax.twinx()
        ax3.spines.right.set_position(("axes", 1.2))
-       formatter = mdates.DateFormatter("%d-%m-%y ")
+       formatter = mdates.DateFormatter("%d\n%m\n%Y")
        ax3.xaxis.set_major_formatter(formatter)
        locator = mdates.HourLocator(interval=int(duration))
        ax3.xaxis.set_major_locator(locator)

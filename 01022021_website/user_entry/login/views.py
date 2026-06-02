@@ -628,8 +628,19 @@ def firstPart(request):
   except:
     return None
 
+def get_scientific_title(key):
+  k = key.lower()
+  if 'ms' in k or 'moisture' in k: return "Soil Moisture Variation"
+  if 'pi' in k or 'pitch' in k: return "Pitch Angle Analysis"
+  if 'pr' in k or 'pressure' in k: return "Pore Water Pressure Analysis"
+  if 'ro' in k or 'roll' in k: return "Roll Sensor Monitoring"
+  if 'rg' in k or 'rain' in k: return "Rainfall Trend"
+  if 'vo' in k or 'voltage' in k: return "Voltage Monitoring"
+  return f"Sensor Analysis: {key}"
 
-
+def get_scientific_color(index):
+  colors = ['#1f77b4', '#2E8B57', '#D62728', '#FF7F0E', '#9467BD']
+  return colors[index % len(colors)]
 
 @no_cache
 def secondPartNew(request):
@@ -661,15 +672,7 @@ def secondPartNew(request):
   set_ty = getPre(preQuery(sensor_id))
   i = -1
   drawlist={}  
-  num_cols = 2
-  num_rows=(len(Dict["sensorid"]) +num_cols  - 1)
-  # Determine the size of each subplot based on the number of columns and rows
-  subplot_width = 8  # Adjust this as needed
-  subplot_height = 6  # Adjust this as needed
-  # Calculate the total figure size
-  fig_width = subplot_width * num_cols
-  fig_height = subplot_height * num_rows
-  figure, axes = plt.subplots(num_rows, num_cols,figsize=(fig_width, fig_height))
+
   for row in range(0, len(Dict["sensorid"])):
     i += 1
     fy, fx, sy, sx, ty, tx = ([] for _ in range(6))
@@ -709,40 +712,86 @@ def secondPartNew(request):
       response['Content-Disposition'] = 'attachment; filename=%s' % filename
       return response
   else:
+    plt.rcParams['font.family'] = 'sans-serif'
+    charts = []
+    chart_index = 0
     for key in keys:
-      rows = counter // num_cols
-      cols = counter % num_cols
-      ax = axes[rows, cols]
-      counter=counter+1
-      data=drawlist[key]
-      formatter = mdates.DateFormatter("%d\n%m\n%Y")
+      fig, ax = plt.subplots(figsize=(10, 5))
+      data = drawlist[key]
+      
+      formatter = mdates.DateFormatter("%d-%b")
       locator = mdates.HourLocator(interval=int(duration))
       
-      ax.plot(data['x'],data['y'])
-      ax.xaxis.set_major_formatter(formatter)
-      ax.xaxis.set_major_locator(locator)
-      ax.set_xlabel('Time')
+      color = get_scientific_color(chart_index)
       
       try:
-        final_label=data['value']+"  ("+key+") "
-        ax.set_ylabel(ySet(final_label,key,key))
+        import pandas as pd
+        raw_x = data['x']
+        raw_y = pd.to_numeric(pd.Series(data['y']), errors='coerce')
+        
+        # Plot raw data faintly
+        ax.plot(raw_x, raw_y, color=color, linewidth=1.5, alpha=0.3, label='Raw Data')
+        
+        # Adaptive smoothing window: 5% of data points, clamped between 3 and 48
+        window_size = max(3, min(len(raw_y) // 20, 48))
+        
+        if len(raw_y) > 5:
+            smoothed_y = raw_y.rolling(window=window_size, center=True, min_periods=1).mean()
+            ax.plot(raw_x, smoothed_y, color=color, linewidth=2.5, marker='o', markersize=3, label='Trend (Moving Avg)')
+        else:
+            ax.plot(raw_x, raw_y, color=color, linewidth=2.5, marker='o', markersize=4, label='Trend')
+      except:
+        # Fallback
+        ax.plot(data['x'], data['y'], color=color, linewidth=2.5, marker='o', markersize=4, label=key)
+      
+      ax.xaxis.set_major_formatter(formatter)
+      ax.xaxis.set_major_locator(locator)
+      ax.tick_params(axis='x', rotation=45)
+      ax.set_xlabel('Time', fontsize=12, fontweight='bold')
+      
+      try:
+        final_label = data['value'] + " (" + key + ")"
+        raw_ylabel = ySet(final_label, key, key)
+        # Add scientific units heuristic
+        if 'moisture' in raw_ylabel.lower() or 'ms' in key.lower(): unit = " (%)"
+        elif 'pitch' in raw_ylabel.lower() or 'pi' in key.lower(): unit = " (°)"
+        elif 'roll' in raw_ylabel.lower() or 'ro' in key.lower(): unit = " (°)"
+        elif 'rain' in raw_ylabel.lower() or 'rg' in key.lower(): unit = " (mm)"
+        elif 'pressure' in raw_ylabel.lower() or 'pr' in key.lower(): unit = " (kPa)"
+        elif 'voltage' in raw_ylabel.lower() or 'vo' in key.lower(): unit = " (V)"
+        else: unit = ""
+        ax.set_ylabel(raw_ylabel.split('(')[0].strip() + unit, fontsize=12, fontweight='bold')
       except:
         pass
       
-    try: 
-      for i in range(len(Dict["sensorid"]), num_rows * num_cols):
-        row = i // num_cols
-        col = i % num_cols
-        figure.delaxes(axes[row, col])
-    except:
-      pass
-    plt.tight_layout()
-    print("X-TICK LABELS:", [t.get_text() for t in axes[0,0].get_xticklabels()])
-    chart = get_graph(figure)
+      ax.set_title(get_scientific_title(key), fontsize=14, fontweight='bold', pad=15)
+      ax.grid(True, linestyle='--', alpha=0.4, color='#cccccc')
+      ax.legend(loc='upper right')
+      
+      # Tight Y-Axis Scaling
+      try:
+        if len(data['y']) > 0:
+          y_min, y_max = min(data['y']), max(data['y'])
+          padding = (y_max - y_min) * 0.1
+          if padding == 0: padding = 1
+          ax.set_ylim(y_min - padding, y_max + padding)
+      except:
+        pass
+        
+      plt.tight_layout()
+      chart_base64 = get_graph(fig)
+      charts.append({
+          'id': key,
+          'title': get_scientific_title(key),
+          'image': chart_base64
+      })
+      plt.close(fig)
+      chart_index += 1
+      
     from datetime import datetime
     now = datetime.now()
     return render(request, 'data-visualization.html', {
-      'chart': chart,
+      'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),
       'current_time': now.strftime('%I:%M %p')
     })

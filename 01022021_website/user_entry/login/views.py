@@ -641,6 +641,20 @@ def secondPartNew(request):
   data = setData(node_records)
   sensor_id = request.POST.getlist('sensor_list_id')
   duration = request.POST['duration']
+  try:
+    from_date_str = request.POST.get('from_date', '').strip()
+    to_date_str = request.POST.get('to_date', '').strip()
+    from_date_str = dateFix(from_date_str)
+    to_date_str = dateFix(to_date_str)
+    import datetime as dt_mod
+    from_date_obj = dt_mod.datetime.strptime(from_date_str, '%Y-%m-%d')
+    to_date_obj = dt_mod.datetime.strptime(to_date_str, '%Y-%m-%d')
+    days_diff = (to_date_obj - from_date_obj).days
+      
+    if str(duration) == "24" and days_diff > 12:
+      duration = "168"
+  except Exception as e:
+    pass
   query_type=request.POST.get('query_type',None)
   Labels.update(labelDict(sensor_id))
   Dict.update(sensorDict(data))

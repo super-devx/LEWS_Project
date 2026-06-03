@@ -662,7 +662,7 @@ def secondPartNew(request):
     to_date_obj = dt_mod.datetime.strptime(to_date_str, '%Y-%m-%d')
     days_diff = (to_date_obj - from_date_obj).days
       
-    if str(duration) == "24" and days_diff > 12:
+    if str(duration) == "24" and days_diff > 25:
       duration = "168"
   except Exception as e:
     pass

@@ -939,7 +939,11 @@ def secondPart(request):
 def download(request):
   filename = "data.csv"
   filepath = "data.csv"
-  csv_file = open("data.csv", 'rb')
+  try:
+    csv_file = open(filepath, 'rb')
+  except FileNotFoundError:
+    return HttpResponse("Data file not generated yet. Please submit a data request first.", status=404)
+    
   mime_type, _ = mimetypes.guess_type(filepath)
   response = HttpResponse(csv_file, content_type = mime_type)
   response['Content-Disposition'] = "attachment; filename = %s" %filename
@@ -1060,3 +1064,8 @@ def coming_soon(request):
     context = {'user_name': name if check == "credit" else None}
     return render(request, 'coming-soon.html', context)
 
+def team(request):
+    """Render the Team page"""
+    global check, name
+    context = {'user_name': name if check == "credit" else None}
+    return render(request, 'team.html', context)

@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}?v=2.1">
+    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}?v=3.1">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
 </head>
 
@@ -346,59 +346,51 @@
                 </div>
             
                 <!-- Funding Organizations Section -->
-                <div class="funding-section mt-5 pt-4">
-                    <div class="funding-banner-wrapper text-center mb-5">
-                        <div class="funding-line-left"></div>
-                        <div class="funding-banner">
-                            Funding organizations
-                        </div>
-                        <div class="funding-line-right"></div>
+                <div class="funding-section-container mt-5 pt-5">
+                    <div class="funding-section-header mb-5">
+                        <div class="funding-header-line"></div>
+                        <h3 class="funding-header-title">FUNDING ORGANIZATIONS</h3>
                     </div>
-                    <div class="funding-grid">
-                        <div class="funding-card">
-                            <div class="funding-icon">
-                                <i class="fas fa-building-columns"></i>
+                    
+                    <div class="funding-scalable-grid">
+                        <!-- Card 1 -->
+                        <div class="funding-org-card animate-fade-in-up">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/nmhs.png' %}" alt="NMHS Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-leaf text-primary fs-3 fallback-icon" style="display:none;"></i>
                             </div>
-                            <div class="funding-name">CSIR-CBRI</div>
-                            <div class="funding-role">Research Partner</div>
+                            <div class="funding-org-name">NMHS</div>
+                            <div class="funding-org-role">Funding Organization</div>
                         </div>
-                        <div class="funding-card">
-                            <div class="funding-icon">
-                                <i class="fas fa-graduation-cap"></i>
-                            </div>
-                            <div class="funding-name">IIT Roorkee</div>
-                            <div class="funding-role">Technical Partner</div>
-                        </div>
-                        <div class="funding-card">
-                            <div class="funding-icon">
-                                <i class="fas fa-leaf"></i>
-                            </div>
-                            <div class="funding-name">NMHS</div>
-                            <div class="funding-role">Funding Agency</div>
-                        </div>
-                        <div class="funding-card">
-                            <div class="funding-icon">
-                                <img src="{% static 'images/drdo-logo.png' %}" alt="DRDO" class="img-fluid" style="max-height: 50px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+
+                        <!-- Card 2 -->
+                        <div class="funding-org-card animate-fade-in-up" style="animation-delay: 0.1s;">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/drdo.png' %}" alt="DRDO Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
                                 <i class="fas fa-shield-alt text-primary fs-3 fallback-icon" style="display:none;"></i>
                             </div>
-                            <div class="funding-name">DRDO</div>
-                            <div class="funding-role">Funding Agency</div>
+                            <div class="funding-org-name">DRDO</div>
+                            <div class="funding-org-role">Funding Organization</div>
                         </div>
-                        <div class="funding-card">
-                            <div class="funding-icon">
-                                <img src="{% static 'images/kdisc-logo.png' %}" alt="K-DISC" class="img-fluid" style="max-height: 50px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+
+                        <!-- Card 3 -->
+                        <div class="funding-org-card animate-fade-in-up" style="animation-delay: 0.2s;">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/kdisc.png' %}" alt="K-DISC Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
                                 <i class="fas fa-lightbulb text-primary fs-3 fallback-icon" style="display:none;"></i>
                             </div>
-                            <div class="funding-name">K-DISC</div>
-                            <div class="funding-role">Funding Agency</div>
+                            <div class="funding-org-name">K-DISC</div>
+                            <div class="funding-org-role">Funding Organization</div>
                         </div>
-                        <div class="funding-card">
-                            <div class="funding-icon">
-                                <img src="{% static 'images/isro-logo.png' %}" alt="ISRO" class="img-fluid" style="max-height: 50px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+
+                        <!-- Card 4 -->
+                        <div class="funding-org-card animate-fade-in-up" style="animation-delay: 0.3s;">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/isro.svg' %}" alt="ISRO Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
                                 <i class="fas fa-satellite text-primary fs-3 fallback-icon" style="display:none;"></i>
                             </div>
-                            <div class="funding-name">ISRO</div>
-                            <div class="funding-role">Funding Agency</div>
+                            <div class="funding-org-name">ISRO</div>
+                            <div class="funding-org-role">Funding Organization</div>
                         </div>
                     </div>
                 </div>
@@ -619,7 +611,7 @@
             });
         }, observerOptions);
 
-        document.querySelectorAll('.feature-card, .partner-card, .about-mission, .funding-banner-wrapper, .funding-card').forEach(el => {
+        document.querySelectorAll('.feature-card, .partner-card, .about-mission, .funding-section-header, .funding-org-card').forEach(el => {
             el.style.opacity = '0';
             observer.observe(el);
         });

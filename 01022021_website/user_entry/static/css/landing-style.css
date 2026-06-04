@@ -1547,186 +1547,124 @@ input:focus-visible {
 }
 
 /* ===== FUNDING ORGANIZATIONS SECTION ===== */
-.funding-section {
+.funding-section-container {
     position: relative;
     z-index: 10;
     width: 100%;
 }
 
-.funding-banner-wrapper {
+.funding-section-header {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-4);
+    flex-direction: column;
+    align-items: flex-start;
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.6s ease-out;
 }
 
-.funding-banner-wrapper.animate-fade-in-up {
+.funding-section-header.animate-fade-in-up {
     opacity: 1;
     transform: translateY(0);
 }
 
-.funding-line-left,
-.funding-line-right {
-    height: 2px;
-    width: 80px;
-    background: var(--color-accent-500);
-    position: relative;
+.funding-header-line {
+    display: none;
 }
 
-.funding-line-left::after,
-.funding-line-right::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    background: var(--color-accent-500);
-    border-radius: 50%;
-}
-
-.funding-line-left::after {
-    right: 0;
-}
-
-.funding-line-right::before {
-    left: 0;
-}
-
-.funding-banner {
-    background: linear-gradient(135deg, var(--color-primary-900), var(--color-primary-800));
-    color: var(--color-accent-400);
+.funding-header-title {
     font-family: var(--font-primary);
     font-weight: 700;
-    font-size: 1.25rem;
-    padding: var(--space-3) var(--space-8);
-    border-radius: 50px;
-    border: 1px solid rgba(255, 122, 47, 0.3);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 10px rgba(255, 122, 47, 0.1);
+    font-size: 1.5rem;
+    color: var(--color-accent-500);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+    padding: var(--space-2) var(--space-5);
+    border: 2px solid var(--color-accent-500);
+    border-radius: 30px;
+    background: rgba(255, 122, 47, 0.05);
+    transition: all 0.3s ease;
+    cursor: default;
 }
 
-.funding-grid {
+.funding-header-title:hover {
+    background: var(--color-accent-500);
+    color: var(--color-white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 122, 47, 0.25);
+}
+
+.funding-scalable-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--space-4);
-    margin-top: var(--space-6);
 }
 
-@media (max-width: 1200px) {
-    .funding-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .funding-grid {
+@media (max-width: 1024px) {
+    .funding-scalable-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 576px) {
-    .funding-grid {
+    .funding-scalable-grid {
         grid-template-columns: 1fr;
     }
 }
 
-.funding-card {
+.funding-org-card {
     background: var(--color-white);
-    border-radius: 16px;
-    padding: var(--space-6) var(--space-3);
+    border-radius: 12px;
+    padding: var(--space-6) var(--space-4);
     text-align: center;
-    border: 1px solid var(--color-gray-200);
     box-shadow: var(--shadow-sm);
-    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     position: relative;
-    overflow: hidden;
+    border-top: 3px solid transparent;
     opacity: 0;
     transform: translateY(20px);
 }
 
-.funding-card.animate-fade-in-up {
+.funding-org-card.animate-fade-in-up {
     opacity: 1;
     transform: translateY(0);
 }
 
-.funding-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, transparent 0%, rgba(255, 122, 47, 0.08) 50%, transparent 100%);
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-    z-index: 1;
-    pointer-events: none;
+.funding-org-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-top-color: var(--color-accent-500);
 }
 
-.funding-card > * {
-    position: relative;
-    z-index: 2;
-}
-
-.funding-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 0 15px rgba(255, 122, 47, 0.15);
-    border-color: var(--color-accent-400);
-}
-
-.funding-card:hover::before {
-    transform: translateX(100%);
-}
-
-.funding-icon {
-    width: 70px;
+.funding-org-icon {
     height: 70px;
-    margin: 0 auto var(--space-4);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.35s ease;
-    background: var(--color-gray-50);
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-4);
 }
 
-.funding-icon i {
-    font-size: 1.8rem;
-    color: var(--color-primary-800);
-    transition: color 0.3s ease;
+.funding-org-icon img {
+    max-height: 50px;
+    max-width: 150px;
+    object-fit: contain;
+    transition: transform 0.4s ease;
 }
 
-.funding-icon img {
-    transition: transform 0.35s ease;
+.funding-org-card:hover .funding-org-icon img {
+    transform: scale(1.05);
 }
 
-.funding-card:hover .funding-icon {
-    transform: scale(1.08);
-}
-
-.funding-card:hover .funding-icon i {
-    color: var(--color-accent-500);
-}
-
-.funding-name {
+.funding-org-name {
     font-family: var(--font-primary);
     font-weight: 700;
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-lg);
     color: var(--color-primary-900);
-    margin-bottom: var(--space-1);
-    transition: color 0.3s ease;
+    margin-bottom: var(--space-2);
 }
 
-.funding-card:hover .funding-name {
-    color: var(--color-accent-500);
-}
-
-.funding-role {
-    font-size: 0.75rem;
+.funding-org-role {
+    font-size: 0.85rem;
     color: var(--color-gray-500);
     letter-spacing: 0.5px;
 }

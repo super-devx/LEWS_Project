@@ -1069,3 +1069,13 @@ def team(request):
     global check, name
     context = {'user_name': name if check == "credit" else None}
     return render(request, 'team.html', context)
+
+def monitoring_page(request):
+    """Render the Monitoring Scale page"""
+    global check, name
+    context = {
+        'user_name': name if check == "credit" else None,
+        # Simulate a graph status level (1-4). This can be updated via a database or API later.
+        'graph_status_level': 1
+    }
+    return render(request, 'monitoring.html', context)

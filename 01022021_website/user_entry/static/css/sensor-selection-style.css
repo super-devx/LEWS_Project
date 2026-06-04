@@ -1348,3 +1348,188 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator:hover {
     align-items: center;
     backdrop-filter: blur(2px);
 }
+
+
+/* ===== LANDSLIDE MONITORING SCALE ===== */
+.monitoring-scale-wrapper {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 10;
+}
+
+.scale-title-bar {
+    position: relative;
+    margin-bottom: 10px;
+    height: 50px;
+}
+
+.pointer-container {
+    position: absolute;
+    top: 0;
+    left: 12.5%; /* Default to 1 Green */
+    transform: translateX(-50%);
+    text-align: center;
+    transition: left 0.4s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pointer-text {
+    font-weight: 700;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.pointer-arrow {
+    font-size: 24px;
+    color: #333;
+    line-height: 1;
+}
+
+.scale-bar {
+    display: flex;
+    width: 100%;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.scale-segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 16px;
+    gap: 8px;
+}
+
+.scale-num {
+    background: #ffffff;
+    color: #333;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.bg-green { background-color: #22c55e; }
+.bg-yellow { background-color: #facc15; color: #333; }
+.bg-orange { background-color: #f97316; }
+.bg-red { background-color: #ef4444; }
+
+.bg-yellow .scale-num { color: #facc15; }
+.bg-green .scale-num { color: #22c55e; }
+.bg-orange .scale-num { color: #f97316; }
+.bg-red .scale-num { color: #ef4444; }
+
+/* Status Cards Grid */
+.status-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.status-card {
+    border-radius: 8px;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.status-card-green { background-color: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2); }
+.status-card-yellow { background-color: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.2); }
+.status-card-orange { background-color: rgba(249, 115, 22, 0.05); border: 1px solid rgba(249, 115, 22, 0.2); }
+.status-card-red { background-color: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+.status-header {
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid;
+}
+
+.status-card-green .status-header { border-bottom-color: rgba(34, 197, 94, 0.3); }
+.status-card-yellow .status-header { border-bottom-color: rgba(250, 204, 21, 0.3); }
+.status-card-orange .status-header { border-bottom-color: rgba(249, 115, 22, 0.3); }
+.status-card-red .status-header { border-bottom-color: rgba(239, 68, 68, 0.3); }
+
+.status-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+.status-card-green .status-icon { color: #22c55e; }
+.status-card-yellow .status-icon { color: #facc15; }
+.status-card-orange .status-icon { color: #f97316; }
+.status-card-red .status-icon { color: #ef4444; }
+
+.status-title {
+    font-weight: 800;
+    font-size: 18px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.status-card-green .status-title { color: #16a34a; }
+.status-card-yellow .status-title { color: #ca8a04; }
+.status-card-orange .status-title { color: #ea580c; }
+.status-card-red .status-title { color: #dc2626; }
+
+.status-subtitle {
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+}
+
+.status-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+    font-size: 13.5px;
+    color: #444;
+    line-height: 1.5;
+}
+
+.status-list li {
+    margin-bottom: 10px;
+    position: relative;
+    padding-left: 14px;
+}
+
+.status-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 16px;
+}
+
+@media (max-width: 991px) {
+    .status-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 575px) {
+    .status-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    .scale-num {
+        display: none;
+    }
+    .scale-segment {
+        font-size: 14px;
+    }
+}
+

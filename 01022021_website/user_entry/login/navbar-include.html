@@ -34,95 +34,12 @@
                     </a>
                 </li>
 
-                <!-- Monitoring (Mega Menu) -->
-                <li class="nav-item has-mega-menu">
-                    <a href="#" class="nav-link" data-page="monitoring" aria-haspopup="true" aria-expanded="false">
+                <!-- Monitoring -->
+                <li class="nav-item">
+                    <a href="{% url 'monitoring' %}" class="nav-link" data-page="monitoring">
                         <i class="fas fa-chart-line nav-icon"></i>
                         <span>Monitoring</span>
-                        <i class="fas fa-chevron-down dropdown-arrow"></i>
                     </a>
-                    <div class="mega-menu">
-                        <div class="mega-menu-container">
-                            <div class="mega-menu-section">
-                                <h3 class="mega-menu-title">
-                                    <i class="fas fa-layer-group"></i>
-                                    Data Selection
-                                </h3>
-                                <ul class="mega-menu-list">
-                                    <li>
-                                        <a href="{% url 'home' %}" class="mega-menu-link">
-                                            <i class="fas fa-filter"></i>
-                                            <div>
-                                                <strong>Sensor Selection</strong>
-                                                <small>Choose sensors and locations</small>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'fetch_info' %}" class="mega-menu-link">
-                                            <i class="fas fa-calendar-alt"></i>
-                                            <div>
-                                                <strong>Configure Data View</strong>
-                                                <small>Set time ranges and options</small>
-                                            </div>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="mega-menu-section">
-                                <h3 class="mega-menu-title">
-                                    <i class="fas fa-chart-bar"></i>
-                                    Visualization
-                                </h3>
-                                <ul class="mega-menu-list">
-                                    <li>
-                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
-                                            <i class="fas fa-chart-area"></i>
-                                            <div>
-                                                <strong>Time Series</strong>
-                                                <small>View sensor data over time</small>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
-                                            <i class="fas fa-chart-pie"></i>
-                                            <div>
-                                                <strong>Statistical Analysis</strong>
-                                                <small>Analyze data patterns</small>
-                                            </div>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="mega-menu-section">
-                                <h3 class="mega-menu-title">
-                                    <i class="fas fa-bell"></i>
-                                    Alerts
-                                </h3>
-                                <ul class="mega-menu-list">
-                                    <li>
-                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                            <div>
-                                                <strong>Active Warnings</strong>
-                                                <small>Current alert status</small>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'coming_soon' %}" class="mega-menu-link">
-                                            <i class="fas fa-history"></i>
-                                            <div>
-                                                <strong>Alert History</strong>
-                                                <small>Past notifications</small>
-                                            </div>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
                 </li>
 
 

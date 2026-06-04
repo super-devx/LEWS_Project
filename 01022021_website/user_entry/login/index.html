@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}?v=2.1">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
 </head>
 
@@ -312,37 +312,6 @@
                                 To provide accurate, timely, and actionable early warnings for landslide hazards, enabling communities and authorities to take preventive measures and save lives through the power of continuous monitoring and advanced sensor technology.
                             </p>
                         </div>
-
-                        <!-- Partners -->
-                        <div class="partners-grid">
-                            <div class="partner-card">
-                                <div class="partner-icon">
-                                    <i class="fas fa-building-columns"></i>
-                                </div>
-                                <div>
-                                    <div class="partner-name">CSIR-CBRI</div>
-                                    <div class="partner-role">Research Partner</div>
-                                </div>
-                            </div>
-                            <div class="partner-card">
-                                <div class="partner-icon">
-                                    <i class="fas fa-graduation-cap"></i>
-                                </div>
-                                <div>
-                                    <div class="partner-name">IIT Roorkee</div>
-                                    <div class="partner-role">Technical Partner</div>
-                                </div>
-                            </div>
-                            <div class="partner-card">
-                                <div class="partner-icon">
-                                    <i class="fas fa-leaf"></i>
-                                </div>
-                                <div>
-                                    <div class="partner-name">NMHS</div>
-                                    <div class="partner-role">Funding Agency</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- About Visual -->
@@ -372,6 +341,64 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Funding Organizations Section -->
+                <div class="funding-section mt-5 pt-4">
+                    <div class="funding-banner-wrapper text-center mb-5">
+                        <div class="funding-line-left"></div>
+                        <div class="funding-banner">
+                            Funding organizations
+                        </div>
+                        <div class="funding-line-right"></div>
+                    </div>
+                    <div class="funding-grid">
+                        <div class="funding-card">
+                            <div class="funding-icon">
+                                <i class="fas fa-building-columns"></i>
+                            </div>
+                            <div class="funding-name">CSIR-CBRI</div>
+                            <div class="funding-role">Research Partner</div>
+                        </div>
+                        <div class="funding-card">
+                            <div class="funding-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="funding-name">IIT Roorkee</div>
+                            <div class="funding-role">Technical Partner</div>
+                        </div>
+                        <div class="funding-card">
+                            <div class="funding-icon">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <div class="funding-name">NMHS</div>
+                            <div class="funding-role">Funding Agency</div>
+                        </div>
+                        <div class="funding-card">
+                            <div class="funding-icon">
+                                <img src="{% static 'images/drdo-logo.png' %}" alt="DRDO" class="img-fluid" style="max-height: 50px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-shield-alt text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-name">DRDO</div>
+                            <div class="funding-role">Funding Agency</div>
+                        </div>
+                        <div class="funding-card">
+                            <div class="funding-icon">
+                                <img src="{% static 'images/kdisc-logo.png' %}" alt="K-DISC" class="img-fluid" style="max-height: 50px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-lightbulb text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-name">K-DISC</div>
+                            <div class="funding-role">Funding Agency</div>
+                        </div>
+                        <div class="funding-card">
+                            <div class="funding-icon">
+                                <img src="{% static 'images/isro-logo.png' %}" alt="ISRO" class="img-fluid" style="max-height: 50px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-satellite text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-name">ISRO</div>
+                            <div class="funding-role">Funding Agency</div>
                         </div>
                     </div>
                 </div>
@@ -592,7 +619,7 @@
             });
         }, observerOptions);
 
-        document.querySelectorAll('.feature-card, .partner-card, .about-mission').forEach(el => {
+        document.querySelectorAll('.feature-card, .partner-card, .about-mission, .funding-banner-wrapper, .funding-card').forEach(el => {
             el.style.opacity = '0';
             observer.observe(el);
         });

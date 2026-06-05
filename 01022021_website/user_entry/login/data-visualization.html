@@ -113,53 +113,7 @@
         </div>
         {% endif %}
 
-        <!-- Quick Actions Panel -->
-        <div class="quick-actions-panel">
-            <h4 class="panel-title">
-                <i class="fas fa-bolt me-2"></i>Quick Actions
-            </h4>
-            <div class="actions-grid">
-                <a href="{% url 'home' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-filter"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Change Filters</h5>
-                        <p class="action-description">Modify sensor types and locations</p>
-                    </div>
-                </a>
 
-                <a href="{% url 'fetch_info' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Adjust Time Range</h5>
-                        <p class="action-description">Change date and time parameters</p>
-                    </div>
-                </a>
-
-                <a href="{% url 'download' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-file-download"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Download Data</h5>
-                        <p class="action-description">Export raw sensor data</p>
-                    </div>
-                </a>
-
-                <a href="#" class="action-card" onclick="window.print(); return false;">
-                    <div class="action-icon">
-                        <i class="fas fa-print"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Print Report</h5>
-                        <p class="action-description">Generate printable version</p>
-                    </div>
-                </a>
-            </div>
-        </div>
 
         <!-- Sticky Back Button -->
         <div style="position: sticky; bottom: 32px; width: max-content; z-index: 100; margin-bottom: -45px; transform: translateY(32px);">

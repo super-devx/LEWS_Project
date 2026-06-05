@@ -238,13 +238,6 @@
                                 <option value="168">Week Wise</option>
                                 <option value="24">Day Wise</option>
                                 <option value="1">Hour Wise</option>
-                                <option value="2">2 Hours</option>
-                                <option value="15">15 Hours</option>
-                                <option value="30">30 Hours</option>
-                                <option value="90">90 Hours</option>
-                                <option value="120">120 Hours</option>
-                                <option value="150">150 Hours</option>
-                                <option value="200">200 Hours</option>
                             </select>
                         </div>
                     </div>
@@ -362,7 +355,26 @@
                     return false;
                 }
 
+                // Single Day Validation for Hour Wise
+                const duration = $('#duration').val();
+                if (duration === "1" && fromDate !== toDate) {
+                    e.preventDefault();
+                    alert('Hour-wise visualization is available only for a single day. Please select the same start and end date.');
+                    return false;
+                }
+
                 return true;
+            });
+
+            // Real-time validation enhancement
+            $('#from_date, #to_date, #duration').on('change', function() {
+                const fDate = $('#from_date').val();
+                const tDate = $('#to_date').val();
+                const dur = $('#duration').val();
+                
+                if (dur === "1" && fDate && tDate && fDate !== tDate) {
+                    alert('Hour-wise visualization is available only for a single day. Please select the same start and end date.');
+                }
             });
 
             // Initialize count

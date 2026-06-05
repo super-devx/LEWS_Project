@@ -644,6 +644,7 @@ def get_scientific_color(index):
 
 @no_cache
 def secondPartNew(request):
+  global name
   Dict = {}
   Labels = {}
   plt.switch_backend('AGG')
@@ -814,10 +815,17 @@ def secondPartNew(request):
 
     from datetime import datetime
     now = datetime.now()
+    
+    try:
+        uname = name if name else 'User'
+    except NameError:
+        uname = 'User'
+        
     return render(request, 'data-visualization.html', {
       'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),
-      'current_time': now.strftime('%I:%M %p')
+      'current_time': now.strftime('%I:%M %p'),
+      'user_name': uname
     })
   
 

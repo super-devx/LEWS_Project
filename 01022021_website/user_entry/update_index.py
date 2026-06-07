@@ -51,7 +51,7 @@ else:
                                 <div class="fallback-icon" style="display:none; align-items:center; justify-content:center; height:100%;"><i class="fas fa-shield-alt text-primary fs-3"></i></div>
                             </div>
                             <div class="funding-name">DRDO</div>
-                            <div class="funding-role">Funding Organization</div>
+                            <div class="funding-role">Funding Agency</div>
                         </div>
                         <div class="funding-card">
                             <div class="funding-icon">
@@ -59,7 +59,7 @@ else:
                                 <div class="fallback-icon" style="display:none; align-items:center; justify-content:center; height:100%;"><i class="fas fa-lightbulb text-primary fs-3"></i></div>
                             </div>
                             <div class="funding-name">K-DISC</div>
-                            <div class="funding-role">Funding Organization</div>
+                            <div class="funding-role">Funding Agency</div>
                         </div>
                         <div class="funding-card">
                             <div class="funding-icon">
@@ -67,7 +67,7 @@ else:
                                 <div class="fallback-icon" style="display:none; align-items:center; justify-content:center; height:100%;"><i class="fas fa-satellite text-primary fs-3"></i></div>
                             </div>
                             <div class="funding-name">ISRO</div>
-                            <div class="funding-role">Funding Organization</div>
+                            <div class="funding-role">Funding Agency</div>
                         </div>
                     </div>
                 </div>

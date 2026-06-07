@@ -62,19 +62,19 @@
                 </div>
 
                 <div class="scale-bar">
-                    <div class="scale-segment bg-green" onclick="updateMonitoringStatus(1)" style="cursor: pointer;">
+                    <div class="scale-segment bg-green" id="seg-green">
                         <div class="scale-num">1</div>
                         <span>Green</span>
                     </div>
-                    <div class="scale-segment bg-yellow" onclick="updateMonitoringStatus(2)" style="cursor: pointer;">
+                    <div class="scale-segment bg-yellow" id="seg-yellow">
                         <div class="scale-num">2</div>
                         <span>Yellow</span>
                     </div>
-                    <div class="scale-segment bg-orange" onclick="updateMonitoringStatus(3)" style="cursor: pointer;">
+                    <div class="scale-segment bg-orange" id="seg-orange">
                         <div class="scale-num">3</div>
                         <span>Orange</span>
                     </div>
-                    <div class="scale-segment bg-red" onclick="updateMonitoringStatus(4)" style="cursor: pointer;">
+                    <div class="scale-segment bg-red" id="seg-red">
                         <div class="scale-num">4</div>
                         <span>Red</span>
                     </div>
@@ -154,48 +154,77 @@
     <script src="{% static 'js/nav.js' %}"></script>
     <script src="{% static 'js/interactions.js' %}"></script>
 
-    <script>
-        // Graph values checking simulation (Mocking graph values for danger level)
-        function checkGraphValuesAndSetDangerLevel() {
-            // In a real scenario, this would fetch from an API: fetch('/api/graph-status')
-            // For now, we will simulate receiving a danger level based on context
-            
-            // Expected backend context value if provided
-            let graphValueLevel = "{{ graph_status_level|default:1 }}"; 
-            graphValueLevel = parseInt(graphValueLevel);
-            
-            updateMonitoringStatus(graphValueLevel);
-        }
+    <script type="module">
+        import { getRiskScore, STATUS_RANGES } from "{% static 'js/riskEngine.js' %}";
 
-        function updateMonitoringStatus(level) {
+        function updateUIWithRiskScore(prediction) {
+            const { score } = prediction;
             const pointer = document.getElementById('monitoring-pointer');
             const pointerText = document.getElementById('monitoring-pointer-text');
             if (!pointer) return;
             
+            let level = 1;
+            let statusText = "SAFE";
+            let color = "#16a34a";
+            let activeCardClass = ".status-card-green";
+
+            if (score >= STATUS_RANGES.GREEN[0] && score <= STATUS_RANGES.GREEN[1]) {
+                level = 1;
+                statusText = "SAFE";
+                color = "#16a34a";
+                activeCardClass = ".status-card-green";
+            } else if (score >= STATUS_RANGES.YELLOW[0] && score <= STATUS_RANGES.YELLOW[1]) {
+                level = 2;
+                statusText = "CAUTION";
+                color = "#ca8a04";
+                activeCardClass = ".status-card-yellow";
+            } else if (score >= STATUS_RANGES.ORANGE[0] && score <= STATUS_RANGES.ORANGE[1]) {
+                level = 3;
+                statusText = "WARNING";
+                color = "#ea580c";
+                activeCardClass = ".status-card-orange";
+            } else if (score >= STATUS_RANGES.RED[0] && score <= STATUS_RANGES.RED[1]) {
+                level = 4;
+                statusText = "DANGER";
+                color = "#dc2626";
+                activeCardClass = ".status-card-red";
+            }
+
             // Map level (1-4) to left percentage (12.5%, 37.5%, 62.5%, 87.5%)
             const percentage = 12.5 + ((level - 1) * 25);
             pointer.style.left = percentage + '%';
+            pointer.style.transition = 'left 0.5s ease-in-out';
 
-            // Change text to reflect danger level from graph
-            if (level === 1) {
-                pointerText.innerText = "Current Status: Safe";
-                pointerText.style.color = "#16a34a";
-            } else if (level === 2) {
-                pointerText.innerText = "Current Status: Caution";
-                pointerText.style.color = "#ca8a04";
-            } else if (level === 3) {
-                pointerText.innerText = "Current Status: Warning";
-                pointerText.style.color = "#ea580c";
-            } else if (level === 4) {
-                pointerText.innerText = "Current Status: DANGER";
-                pointerText.style.color = "#dc2626";
+            // Change text to reflect score
+            pointerText.innerHTML = `Current Status: ${statusText}<br>Risk Score: ${score}/100`;
+            pointerText.style.color = color;
+            pointerText.style.textAlign = 'center';
+            pointerText.style.lineHeight = '1.4';
+
+            // Reset all cards
+            document.querySelectorAll('.status-card').forEach(card => {
+                card.style.transform = 'scale(1)';
+                card.style.boxShadow = 'none';
+                card.style.border = '1px solid #e5e7eb';
+                card.style.opacity = '0.5';
+                card.style.backgroundColor = '#ffffff';
+                card.style.transition = 'all 0.3s ease';
+            });
+
+            // Highlight active card
+            const activeCard = document.querySelector(activeCardClass);
+            if (activeCard) {
+                activeCard.style.opacity = '1';
+                activeCard.style.transform = 'scale(1.05)';
+                activeCard.style.boxShadow = `0 10px 25px ${color}40`; // 25% opacity shadow
+                activeCard.style.border = `3px solid ${color}`;
+                activeCard.style.backgroundColor = `${color}0D`; // 5% opacity background
             }
         }
         
-        // Initialize based on graph values
-        document.addEventListener('DOMContentLoaded', function() {
-            checkGraphValuesAndSetDangerLevel();
-        });
+        // Initialize based on risk engine
+        const prediction = getRiskScore();
+        updateUIWithRiskScore(prediction);
     </script>
 </body>
 </html>

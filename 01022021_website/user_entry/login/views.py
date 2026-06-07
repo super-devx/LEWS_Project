@@ -713,47 +713,36 @@ def secondPartNew(request):
       response['Content-Disposition'] = 'attachment; filename=%s' % filename
       return response
   else:
-    plt.rcParams['font.family'] = 'sans-serif'
+    import json
     charts = []
     chart_index = 0
     for key in keys:
-      fig, ax = plt.subplots(figsize=(10, 5))
       data = drawlist[key]
-      
-      formatter = mdates.DateFormatter("%d-%b")
-      locator = mdates.HourLocator(interval=int(duration))
-      
       color = get_scientific_color(chart_index)
+      
+      raw_x = data['x']
+      raw_y_list = []
+      smoothed_y_list = []
       
       try:
         import pandas as pd
-        raw_x = data['x']
         raw_y = pd.to_numeric(pd.Series(data['y']), errors='coerce')
         
-        # Plot raw data faintly
-        ax.plot(raw_x, raw_y, color=color, linewidth=1.5, alpha=0.3, label='Raw Data')
-        
-        # Adaptive smoothing window: 5% of data points, clamped between 3 and 48
         window_size = max(3, min(len(raw_y) // 20, 48))
-        
         if len(raw_y) > 5:
             smoothed_y = raw_y.rolling(window=window_size, center=True, min_periods=1).mean()
-            ax.plot(raw_x, smoothed_y, color=color, linewidth=2.5, marker='o', markersize=3, label='Trend (Moving Avg)')
         else:
-            ax.plot(raw_x, raw_y, color=color, linewidth=2.5, marker='o', markersize=4, label='Trend')
+            smoothed_y = raw_y
+            
+        raw_y_list = [y if pd.notna(y) else None for y in raw_y]
+        smoothed_y_list = [y if pd.notna(y) else None for y in smoothed_y]
       except:
-        # Fallback
-        ax.plot(data['x'], data['y'], color=color, linewidth=2.5, marker='o', markersize=4, label=key)
-      
-      ax.xaxis.set_major_formatter(formatter)
-      ax.xaxis.set_major_locator(locator)
-      ax.tick_params(axis='x', rotation=45)
-      ax.set_xlabel('Time', fontsize=12, fontweight='bold')
+        raw_y_list = data['y']
+        smoothed_y_list = data['y']
       
       try:
         final_label = data['value'] + " (" + key + ")"
         raw_ylabel = ySet(final_label, key, key)
-        # Add scientific units heuristic
         if 'moisture' in raw_ylabel.lower() or 'ms' in key.lower(): unit = " (%)"
         elif 'pitch' in raw_ylabel.lower() or 'pi' in key.lower(): unit = " (°)"
         elif 'roll' in raw_ylabel.lower() or 'ro' in key.lower(): unit = " (°)"
@@ -761,32 +750,30 @@ def secondPartNew(request):
         elif 'pressure' in raw_ylabel.lower() or 'pr' in key.lower(): unit = " (kPa)"
         elif 'voltage' in raw_ylabel.lower() or 'vo' in key.lower(): unit = " (V)"
         else: unit = ""
-        ax.set_ylabel(raw_ylabel.split('(')[0].strip() + unit, fontsize=12, fontweight='bold')
+        ylabel = raw_ylabel.split('(')[0].strip() + unit
       except:
-        pass
-      
-      ax.set_title(get_scientific_title(key), fontsize=14, fontweight='bold', pad=15)
-      ax.grid(True, linestyle='--', alpha=0.4, color='#cccccc')
-      ax.legend(loc='upper right')
-      
-      # Tight Y-Axis Scaling
-      try:
-        if len(data['y']) > 0:
-          y_min, y_max = min(data['y']), max(data['y'])
-          padding = (y_max - y_min) * 0.1
-          if padding == 0: padding = 1
-          ax.set_ylim(y_min - padding, y_max + padding)
-      except:
-        pass
+        ylabel = key
         
-      plt.tight_layout()
-      chart_base64 = get_graph(fig)
+      import datetime as dt_mod
+      x_strings = []
+      for dt in raw_x:
+        if isinstance(dt, dt_mod.datetime):
+            x_strings.append(dt.strftime('%Y-%m-%dT%H:%M:%S'))
+        elif isinstance(dt, dt_mod.date):
+            x_strings.append(dt.strftime('%Y-%m-%d'))
+        else:
+            x_strings.append(str(dt))
+            
       charts.append({
           'id': key,
           'title': get_scientific_title(key),
-          'image': chart_base64
+          'raw_x': json.dumps(x_strings),
+          'raw_y': json.dumps(raw_y_list),
+          'smoothed_y': json.dumps(smoothed_y_list),
+          'color': color,
+          'duration': str(duration),
+          'ylabel': ylabel
       })
-      plt.close(fig)
       chart_index += 1
       
     # Calculate status level dynamically based on highest graph variance

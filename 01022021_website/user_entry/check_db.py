@@ -1,7 +1,5 @@
 import psycopg2
-conn=psycopg2.connect(host='localhost',database='netala_database',user='postgres',password='Root@1234A')
-cur=conn.cursor()
-cur.execute("SELECT DISTINCT node_id FROM sensor_info")
-print("node_ids in sensor_info:", [r[0] for r in cur.fetchall()])
-cur.execute("SELECT DISTINCT node_id FROM node")
-print("node_ids in node:", [r[0] for r in cur.fetchall()])
+conn = psycopg2.connect('dbname=netala_database user=postgres password=Root@1234A host=127.0.0.1')
+cur = conn.cursor()
+cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'auth_user');")
+print("auth_user exists:", cur.fetchone()[0])

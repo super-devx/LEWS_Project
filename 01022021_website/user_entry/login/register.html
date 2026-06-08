@@ -92,11 +92,6 @@
                 <span>Back to Home</span>
             </a>
 
-            <!-- Security Badge -->
-            <div class="auth-security-badge">
-                <i class="fas fa-shield-halved"></i>
-                <span>256-bit Encryption</span>
-            </div>
 
             <!-- Auth Card -->
             <div class="auth-card auth-card-glass">
@@ -161,7 +156,7 @@
                             <input
                                 type="email"
                                 id="email"
-                                name="t2"
+                                name="t5"
                                 class="auth-form-input"
                                 placeholder="Enter your email address"
                                 autocomplete="email"
@@ -187,7 +182,7 @@
                             <input
                                 type="tel"
                                 id="phone"
-                                name="t3"
+                                name="t4"
                                 class="auth-form-input"
                                 placeholder="Enter your phone number"
                                 autocomplete="tel"
@@ -213,7 +208,7 @@
                             <input
                                 type="password"
                                 id="password"
-                                name="t4"
+                                name="t3"
                                 class="auth-form-input has-toggle"
                                 placeholder="Create a strong password"
                                 autocomplete="new-password"
@@ -255,7 +250,7 @@
                             <input
                                 type="password"
                                 id="confirmPassword"
-                                name="t5"
+                                name="t_confirm"
                                 class="auth-form-input has-toggle"
                                 placeholder="Confirm your password"
                                 autocomplete="new-password"
@@ -274,6 +269,25 @@
                         <div class="auth-validation-message error" id="confirmPasswordError" style="display: none;">
                             <i class="fas fa-exclamation-circle"></i>
                             <span>Passwords do not match</span>
+                        </div>
+                    </div>
+
+                    <!-- Site / Tenant Selection -->
+                    <div class="auth-form-group">
+                        <label class="auth-form-label" for="tenant_id">
+                            <span class="auth-form-label-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Select Monitoring Site
+                            </span>
+                        </label>
+                        <div class="auth-input-wrapper">
+                            <select id="tenant_id" name="tenant_id" class="form-select border-secondary" required style="padding-left: 2.5rem; height: 3rem; background-color: #fff; color: #000;">
+                                <option value="" disabled selected style="color: #666;">Select Site / Tenant</option>
+                                {% for t in tenants %}
+                                    <option value="{{ t.id }}" style="color: #000;">{{ t.id }} - {{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fas fa-map-marker-alt auth-input-icon" style="z-index: 5; color: #666;"></i>
                         </div>
                     </div>
 

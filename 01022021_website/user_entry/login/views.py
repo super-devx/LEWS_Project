@@ -89,6 +89,11 @@ def logout(request):
 def f1(email):
     print('i have called')
     
+    # Get user's tenant_id
+    cursor.execute("SELECT tenant_id FROM user_list WHERE email_id=%s", (email,))
+    tenant_result = cursor.fetchone()
+    tenant_id = tenant_result[0] if tenant_result else None
+    
     # 1. Generate Sensor Checkboxes
     query = "select distinct(sensor_type) from sensor_info order by sensor_type"   
     cursor.execute(query)
@@ -130,8 +135,12 @@ def f1(email):
     ) + sensor
             
     # 2. Generate Location Checkboxes
-    query = "select node_id,location,name from node where node_id in (select node_id from node,u_status where node.location=u_status.location and email_id='"+email+"')"   
-    cursor.execute(query)
+    if tenant_id:
+        query = "select node_id,location,name from node where tenant_id=%s"
+        cursor.execute(query, (tenant_id,))
+    else:
+        query = "select node_id,location,name from node where node_id in (select node_id from node,u_status where node.location=u_status.location and email_id=%s)"
+        cursor.execute(query, (email,))
     node_records = cursor.fetchall()
     
     import re
@@ -144,9 +153,14 @@ def f1(email):
     
     location = ""
     state_name_for_map = "kerala" # Default fallback
+    if tenant_id:
+        cursor.execute("SELECT remarks FROM tenant WHERE tenant_id=%s", (tenant_id,))
+        t_rem = cursor.fetchone()
+        if t_rem and t_rem[0] and " for " in t_rem[0] and " Landslide" in t_rem[0]:
+            state_name_for_map = t_rem[0].split(" for ")[1].split(" Landslide")[0].lower()
+            
     for row in node_records:
         node_id, loc_name, name = row[0], row[1], row[2]
-        state_name_for_map = loc_name.lower()
         location += (
             f"<li><label class='styled-card' for='{node_id}'>"
             f"<div class='styled-card-content'>"
@@ -234,16 +248,16 @@ def fetch_info(request):
   tenant_result = cursor.fetchone()
   tenant_id = tenant_result[0] if tenant_result else None
 
-  # Get user's allowed node_ids based on u_status table (location-based access control)
-  allowed_nodes_query = """
-    SELECT DISTINCT node.node_id FROM node
-    INNER JOIN u_status ON node.location = u_status.location
-    WHERE u_status.email_id = %s
-  """
+  # Get user's allowed node_ids
   if tenant_id:
-    allowed_nodes_query += " AND node.tenant_id = %s"
-    cursor.execute(allowed_nodes_query, (name, tenant_id))
+    allowed_nodes_query = "SELECT DISTINCT node_id FROM node WHERE tenant_id = %s"
+    cursor.execute(allowed_nodes_query, (tenant_id,))
   else:
+    allowed_nodes_query = """
+      SELECT DISTINCT node.node_id FROM node
+      INNER JOIN u_status ON node.location = u_status.location
+      WHERE u_status.email_id = %s
+    """
     cursor.execute(allowed_nodes_query, (name,))
   allowed_nodes_result = cursor.fetchall()
   allowed_node_ids = [row[0] for row in allowed_nodes_result]
@@ -339,7 +353,27 @@ def login_form(request):
   return render(request,'login.html')
 
 def register_form(request):
-  return render(request,'register.html')
+  cursor.execute("SELECT tenant_id, tenant_name, remarks FROM tenant WHERE is_active=true AND tenant_id != 1 ORDER BY tenant_id")
+  tenants = cursor.fetchall()
+  
+  formatted_tenants = []
+  for t in tenants:
+      t_id = t[0]
+      name = t[1]
+      remark = t[2] if t[2] else ""
+      
+      if " for " in remark and " Landslide" in remark:
+          state = remark.split(" for ")[1].split(" Landslide")[0]
+          display_name = f"{state} ({name})"
+      else:
+          display_name = f"{name}"
+          
+      formatted_tenants.append({
+          'id': t_id,
+          'name': display_name
+      })
+      
+  return render(request, 'register.html', {'tenants': formatted_tenants})
 
 
 
@@ -354,7 +388,7 @@ def login_page(request):
 
   # Handle GET request - show login form
   if request.method != 'POST':
-    return render(request, 'regis.html')
+    return redirect('signin')
 
   # Handle POST request - process login
   print(type(request.POST))
@@ -389,16 +423,16 @@ def login_page(request):
         return redirect('home')
     else:
       if status =="app":
-        return HttpResponse("credidentals is not correct");     
+        return HttpResponse("credentials are not correct");     
       else:
-        return render(request,'regis.html',{'message':"credidentals are not correct"})
+        return render(request,'login.html',{'message':"credentials are not correct"})
       
   except Exception as e:
     print("ANY ERROR",e)
     if status == "web":
-      return render(request,'regis.html',{'message':"INVALID USER"})
+      return render(request,'login.html',{'message':"INVALID USER"})
     else:
-      return HttpResponse("credidentals is not correct"); 
+      return HttpResponse("credentials are not correct"); 
 
 
 
@@ -437,7 +471,7 @@ def home(request,web=None,amessage=''):
     if web=="app":
       return HttpResponse("YOU ARE NOT A VALID USER..");
     else:
-       return render(request,'login',{'message':"YOU ARE NOT A VALID USER......."})
+       return render(request,'login.html',{'message':"YOU ARE NOT A VALID USER......."})
 
 def dateFix(date):
     if len(date) == 0:
@@ -970,83 +1004,79 @@ def download(request):
 
 def activate(request, uidb64, token):
   print('HAS CAME HERE')
+  from django.core.signing import TimestampSigner, SignatureExpired, BadSignature
   try:
-    uid = force_text(urlsafe_base64_decode(uidb64))
-    user = User.objects.get(pk=uid)
-    print(user.username)
+    email = force_text(urlsafe_base64_decode(uidb64))
+    signer = TimestampSigner()
+    # Verify token, max age 1 day (86400 seconds)
+    original_uidb64 = signer.unsign(token, max_age=86400)
     
-  except(TypeError, ValueError, OverflowError, User.DoesNotExist):
-    user = None
-    print(user)
-    print(account_activation_token.check_token(user, token))
-  if user is not None and account_activation_token.check_token(user, token):
-      #login(request)
-    innerquery="update user_list set verify='yes' where uname='"+user.username+"'"
-    cursor.execute(innerquery)
-    connection.commit();  
-    return HttpResponse("Thank you for your email confirmation. Now you can login your account after validate the admin YOU WILL GET THE CONFIRMATION MAIL WHEN ADMIN ALLOWS YOU.<a href='/regis.html'>CLICK HERE TO HOME</a>")
-  else:
-    return HttpResponse("Activation link is invalid!<a href='/regis.html'>CLICK HERE TO RETURN</a>")  
+    if uidb64 == original_uidb64:
+      innerquery="update user_list set verify='yes' where email_id=%s"
+      cursor.execute(innerquery, [email])
+      connection.commit()
+      return HttpResponse("Thank you for your email confirmation. Now you can login to your account after admin validation. <br><a href='/'>CLICK HERE TO HOME</a>")
+    else:
+      return HttpResponse("Activation link is invalid! <br><a href='/'>CLICK HERE TO RETURN</a>")
+  except (SignatureExpired, BadSignature, TypeError, ValueError, OverflowError) as e:
+    print('Activation Error:', e)
+    return HttpResponse("Activation link is invalid or expired! <br><a href='/'>CLICK HERE TO RETURN</a>")  
          #190720950
          
          
          
 def registration(request):
-  fmessage='PROBLY DUPLICATE USER'
-  name=request.POST['t1']
-  password=request.POST['t3']
-  ph_no=request.POST['t4']
-  email=request.POST['t5']
-  utype=request.POST['t6']
-  web=request.POST["web"]
-  query="insert into user_list values('"+name+"','"+password+"','"+ph_no+"','"+email+"','"+utype+"','unaccepted')"
+  global name
+  global check
   try:
-    print('OK')
-    print(account_activation_token)
-    
-    user= User.objects.create_user(username=name,email=email,password=password)
-    
-    
-    print(user.username)
-    current_site = get_current_site(request)
+    full_name=request.POST['t1']
+    password=request.POST['t3']
+    ph_no=request.POST['t4']
+    email=request.POST['t5']
+    utype=request.POST['t6']
+    tenant_id=request.POST['tenant_id']
+    web=request.POST.get("web", "web")
+  except KeyError as e:
+    return render(request, 'register.html', {'message': f'Missing field: {str(e)}'})
 
-    print(urlsafe_base64_encode(force_bytes(user)))
-    print(account_activation_token.make_token(user))
-    mail_subject = 'Activate your NMHS account.'
-    message = render_to_string('acc_active_email.html',{
-                'name': name,
-                'domain': current_site.domain,
-                'uid':urlsafe_base64_encode(force_bytes(user.pk)),
-                'token':account_activation_token.make_token(user),
-            })
-    print('OK@')
-    semail = EmailMessage(mail_subject, message, to=[email])
-    semail.send()
-    
-    cursor.execute(query)
-    connection.commit();
-    fmessage="PLEASE CHECK YOUR EMAIL ID"
-    print('OK1')
-    print(web)
+  try:
+    # Check if user already exists in user_list
+    cursor.execute("SELECT uname FROM user_list WHERE uname = %s", [full_name])
+    if cursor.fetchone():
+        return render(request, 'register.html', {'message': 'Username already taken.'})
+        
+    cursor.execute("SELECT email_id FROM user_list WHERE email_id = %s", [email])
+    if cursor.fetchone():
+        return render(request, 'register.html', {'message': 'Email already registered.'})
+
+    query="insert into user_list(uname, upassword, ph_no, email_id, user_type, status, verify, tenant_id) values(%s, %s, %s, %s, %s, 'accepted', 'yes', %s)"
+    try:
+        cursor.execute(query, [full_name, password, ph_no, email, utype, tenant_id])
+        connection.commit()
+    except Exception as db_e:
+        # Fallback to original insert if column names are wrong
+        connection.rollback()
+        query="insert into user_list values(%s, %s, %s, %s, %s, 'accepted', 'yes', 1)"
+        cursor.execute(query, [full_name, password, ph_no, email, utype])
+        connection.commit()
+
+    # Automatically log the user in
+    name = email
+    check = "credit"
+
     if web == "app":
-      return HttpResponse("PLEASE CONFIRM YOUR EMAIL ID"); 
+      return HttpResponse(email + "#" + "SUCCESS" + "#" + "" + "#" + "")
     else:
-      return render(request,'regis.html',{'message':" PLEASE CONFIEM YOUR EMAIL ID"})
+      return redirect('home')
+      
   except Exception as e:
-    #print("ANY ERROR",e)
-    message='DATA HAS NOT BEEN INSERTED,SERVER ERROR'
-     
+    import traceback
+    print('Registration Exception:', e)
+    traceback.print_exc()
     if web == "app":
-      return HttpResponse("DATA HAS BEEN NOT SUBMITTED......"); 
+      return HttpResponse("Unable to create account at the moment. Please try again later.")
     else:
-      print('message is1',e)
-      return HttpResponse("DATA HAS BEEN NOT SUBMITTED......"); 
-  finally:
-    if web=="app":
-      return HttpResponse("PLEASE CONFIRM YOUR EMAIL ID"); 
-    else:
-      print('message is final')
-      return render(request,'regis.html',{'message':fmessage})
+      return render(request, 'register.html', {'message': "Unable to create account at the moment. Please try again later."})
      
 
 

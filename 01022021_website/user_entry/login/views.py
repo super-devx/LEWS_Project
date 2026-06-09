@@ -353,7 +353,7 @@ def login_form(request):
   return render(request,'login.html')
 
 def register_form(request):
-  cursor.execute("SELECT tenant_id, tenant_name, remarks FROM tenant WHERE is_active=true AND tenant_id != 1 ORDER BY tenant_id")
+  cursor.execute("SELECT tenant_id, tenant_name, remarks FROM tenant WHERE is_active=true ORDER BY tenant_id")
   tenants = cursor.fetchall()
   
   formatted_tenants = []
@@ -362,7 +362,9 @@ def register_form(request):
       name = t[1]
       remark = t[2] if t[2] else ""
       
-      if " for " in remark and " Landslide" in remark:
+      if t_id == 1:
+          display_name = "Default"
+      elif " for " in remark and " Landslide" in remark:
           state = remark.split(" for ")[1].split(" Landslide")[0]
           display_name = f"{state} ({name})"
       else:

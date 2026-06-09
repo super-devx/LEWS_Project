@@ -842,6 +842,31 @@ def secondPartNew(request):
     except NameError:
         uname = 'User'
         
+    try:
+        import csv
+        sensor_id_list = request.POST.getlist('sensor_list_id')
+        from_date_str = request.POST['from_date']
+        to_date_str = request.POST['to_date']
+        from_date_fixed = dateFix(from_date_str)
+        to_date_fixed = dateFix(to_date_str)
+        from_format = dateFormat(request, from_date_fixed, 'f')
+        to_Format = dateFormat(request, to_date_fixed, 't')
+        
+        csv_query = "SELECT * FROM sensor_data WHERE "
+        csv_query += prepareQuery('sensor_id', sensor_id_list)
+        csv_query += " AND receive_time <= (to_timestamp('" + to_Format + "','yyyy-mm-dd hh24:mi:ss')) AND receive_time >= (to_timestamp('" + from_format + "', 'yyyy-mm-dd hh24:mi:ss')) ORDER BY receive_time"
+        
+        cursor.execute(csv_query)
+        csv_records = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        
+        with open('data.csv', 'w+', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(colnames)
+            writer.writerows(csv_records)
+    except Exception as e:
+        print("Error generating full dataset CSV:", e)
+
     return render(request, 'data-visualization.html', {
       'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),

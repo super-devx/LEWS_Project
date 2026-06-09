@@ -227,81 +227,25 @@
                 }, 300);
             });
             // Map Overview Config and Initialization
-            const stateMapConfig = {
-                'kerala': {
-                    image: '{% static "images/slopes/kerala.jpg" %}',
-                    pins: {
-                        'N1': { top: '35%', left: '75%' },
-                        'N2': { top: '50%', left: '85%' },
-                        'N3': { top: '60%', left: '70%' },
-                        'N4': { top: '75%', left: '45%' },
-                        'N5': { top: '25%', left: '50%' },
-                        'N6': { top: '45%', left: '35%' },
-                        'N7': { top: '60%', left: '15%' },
-                        'N8': { top: '55%', left: '55%' },
-                        'N9': { top: '35%', left: '25%' },
-                        'N0': { top: '65%', left: '20%' }
-                    }
-                },
-                'kerela': {
-                    image: '{% static "images/slopes/kerala.jpg" %}',
-                    pins: {
-                        'N1': { top: '35%', left: '75%' },
-                        'N2': { top: '50%', left: '85%' },
-                        'N3': { top: '60%', left: '70%' },
-                        'N4': { top: '75%', left: '45%' },
-                        'N5': { top: '25%', left: '50%' },
-                        'N6': { top: '45%', left: '35%' },
-                        'N7': { top: '60%', left: '15%' },
-                        'N8': { top: '55%', left: '55%' },
-                        'N9': { top: '35%', left: '25%' },
-                        'N0': { top: '65%', left: '20%' }
-                    }
-                },
-                'sikkim': {
-                    image: '{% static "images/slopes/sikkim.jpg" %}',
-                    pins: {
-                        'N1': { top: '30%', left: '40%' },
-                        'N2': { top: '45%', left: '60%' },
-                        'N3': { top: '55%', left: '75%' },
-                        'N4': { top: '65%', left: '30%' }
-                    }
-                },
-                'himachal': {
-                    image: '{% static "images/slopes/himachal.jpg" %}',
-                    pins: {
-                        'N1': { top: '20%', left: '50%' },
-                        'N2': { top: '35%', left: '65%' },
-                        'N3': { top: '50%', left: '35%' },
-                        'N4': { top: '70%', left: '55%' },
-                        'N5': { top: '40%', left: '80%' }
-                    }
-                }
-            };
-
             setTimeout(function () {
                 let userState = $('#user_state_data').val();
                 if (!userState) userState = 'kerala'; // fallback
-
                 userState = userState.toLowerCase().trim();
 
-                let matchedState = 'kerala';
-                if (userState.includes('himachal')) {
-                    matchedState = 'himachal';
-                } else if (userState.includes('sikkim')) {
-                    matchedState = 'sikkim';
-                } else if (userState.includes('kerala') || userState.includes('kerela')) {
-                    matchedState = 'kerela';
-                } else if (stateMapConfig[userState]) {
-                    matchedState = userState;
-                }
+                // Build the dynamic image path
+                // Assuming your STATIC_URL is '/static/'
+                let imagePath = `/static/images/slopes/${userState}.jpg`;
+                
+                let imgElement = $('#stateMapImage');
+                
+                // If the dynamic image is not found, fallback to a default image
+                imgElement.on('error', function() {
+                    $(this).attr('src', '/static/images/slopes/default.png'); // Show the bunny "OH NO" image
+                    $(this).off('error'); // Prevent infinite loop
+                });
 
-                const config = stateMapConfig[matchedState];
-                if (config) {
-                    $('#stateMapImage').attr('src', config.image);
-
-                    $('#pinsContainer').empty(); // Ensures no pins are shown
-                }
+                imgElement.attr('src', imagePath);
+                $('#pinsContainer').empty(); // Ensures no pins are shown
             }, 100);
 
         });

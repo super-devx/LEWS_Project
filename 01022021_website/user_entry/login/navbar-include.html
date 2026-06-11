@@ -158,8 +158,11 @@
                             </div>
                         </div>
                         <hr class="dropdown-divider">
-
-                        <a href="{% url 'logout' %}" class="logout-link">
+                        <a href="{% url 'profile' %}" class="dropdown-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.25rem; color: var(--neutral-700, #333); text-decoration: none; font-size: 0.9rem; transition: background 0.2s;">
+                            <i class="fas fa-user-circle" style="color: var(--neutral-500, #666); font-size: 1.1rem;"></i>
+                            <span>My Profile</span>
+                        </a>
+                        <a href="{% url 'logout_legacy' %}" class="logout-link">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Logout</span>
                         </a>

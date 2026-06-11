@@ -22,6 +22,8 @@ urlpatterns = [
     path('insert',views.insert, name=''),
     path('logout.html',views.logout, name='logout_legacy'),
     # New pages
+    path('profile', views.profile_view, name='profile'),
+    path('profile/update', views.update_profile, name='update_profile'),
     path('about', views.about, name='about'),
     path('mission', views.mission, name='mission'),
     path('contact', views.contact, name='contact'),

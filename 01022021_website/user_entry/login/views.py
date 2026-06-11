@@ -1161,3 +1161,129 @@ def monitoring_page(request):
         'graph_status_level': status_level
     }
     return render(request, 'monitoring.html', context)
+
+
+def profile_view(request):
+    global check, name, connection, cursor
+    try:
+        is_logged_in = (check == "credit")
+    except NameError:
+        is_logged_in = False
+        
+    try:
+        current_email = name
+    except NameError:
+        current_email = None
+        
+    if not is_logged_in or not current_email:
+        return redirect('signin')
+        
+    # Re-fetch connection if closed
+    try:
+        cursor.execute("SELECT uname, email_id, tenant_id, created_at FROM user_list WHERE email_id=%s", [current_email])
+    except Exception:
+        connection, _ = opendatabase()
+        cursor = connection.cursor()
+        cursor.execute("SELECT uname, email_id, tenant_id, created_at FROM user_list WHERE email_id=%s", [current_email])
+        
+    user_data = cursor.fetchone()
+    
+    if not user_data:
+        return redirect('signin')
+        
+    uname, email_id, tenant_id, created_at = user_data
+    
+    # Fetch tenant data
+    cursor.execute("SELECT tenant_id, tenant_name, contact_email, remarks FROM tenant WHERE tenant_id=%s", [tenant_id])
+    tenant_data = cursor.fetchone()
+    
+    if tenant_data:
+        t_id, t_name, t_email, t_remarks = tenant_data
+        if t_remarks and " for " in t_remarks and " Landslide" in t_remarks:
+            state = t_remarks.split(" for ")[1].split(" Landslide")[0]
+            display_name = f"{state} ({t_name})"
+        else:
+            display_name = f"{t_name}"
+    else:
+        t_id = ""
+        t_email = ""
+        display_name = "N/A"
+        t_remarks = ""
+
+    if created_at:
+        formatted_date = created_at.strftime("%B %d, %Y")
+    else:
+        formatted_date = "N/A"
+        
+    context = {
+        'user_name': uname,
+        'email_id': email_id,
+        'created_at': formatted_date,
+        'tenant_id': t_id,
+        'tenant_name': display_name,
+        'tenant_contact': t_email,
+        'tenant_remarks': t_remarks
+    }
+    
+    return render(request, 'profile.html', context)
+
+
+def update_profile(request):
+    global check, name, connection, cursor
+    try:
+        is_logged_in = (check == "credit")
+    except NameError:
+        is_logged_in = False
+        
+    try:
+        current_email = name
+    except NameError:
+        current_email = None
+        
+    if not is_logged_in or not current_email:
+        return redirect('signin')
+        
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # Ensure connection
+        try:
+            cursor.execute("SELECT 1")
+        except Exception:
+            connection, _ = opendatabase()
+            cursor = connection.cursor()
+        
+        if action == 'update_username':
+            new_username = request.POST.get('username')
+            if new_username and new_username.strip():
+                try:
+                    cursor.execute("UPDATE user_list SET uname=%s WHERE email_id=%s", [new_username.strip(), current_email])
+                    connection.commit()
+                    messages.success(request, 'Username updated successfully.')
+                except Exception as e:
+                    messages.error(request, 'Failed to update username.')
+            else:
+                messages.error(request, 'Username cannot be empty.')
+                
+        elif action == 'update_password':
+            current_password = request.POST.get('current_password')
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            cursor.execute("SELECT upassword FROM user_list WHERE email_id=%s", [current_email])
+            row = cursor.fetchone()
+            
+            if row and row[0] == current_password:
+                if new_password and new_password == confirm_password:
+                    try:
+                        cursor.execute("UPDATE user_list SET upassword=%s WHERE email_id=%s", [new_password, current_email])
+                        connection.commit()
+                        messages.success(request, 'Password changed successfully.')
+                    except Exception as e:
+                        messages.error(request, 'Failed to change password.')
+                else:
+                    messages.error(request, 'New passwords do not match or are empty.')
+            else:
+                messages.error(request, 'Incorrect current password.')
+                
+    return redirect('profile')

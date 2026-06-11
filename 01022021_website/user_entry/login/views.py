@@ -387,6 +387,7 @@ def login_page(request):
   global count_app
   global name
   global check
+  global connection, cursor
 
   # Handle GET request - show login form
   if request.method != 'POST':
@@ -394,21 +395,24 @@ def login_page(request):
 
   # Handle POST request - process login
   print(type(request.POST))
-  name=request.POST['t11']
-  print(name)
+  identifier=request.POST['t11']
+  print(identifier)
   password=request.POST['t12']
   print(password)
   status=request.POST['web']
   if request.POST.__contains__('count_app'):
    count_app=request.POST['count_app']
 
-  query="select uname,email_id,user_type from user_list where(email_id='"+name+"' and upassword='"+password+"' and status='accepted')"
+  query = "SELECT uname, email_id, user_type FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
   try:
-    cursor.execute(query)
+    cursor.execute(query, [identifier, identifier, password])
     result=cursor.fetchall()
     print(len(result))
     if len(result) != 0:
       check="credit"
+      # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
+      name = result[0][1]
+      
       if status == "app":
         sensor,location=f1(name)
         print("count_app",count_app)
@@ -427,14 +431,39 @@ def login_page(request):
       if status =="app":
         return HttpResponse("credentials are not correct");     
       else:
-        return render(request,'login.html',{'message':"credentials are not correct"})
+        return render(request,'login.html',{'message':"Invalid username/email or password"})
       
   except Exception as e:
     print("ANY ERROR",e)
-    if status == "web":
-      return render(request,'login.html',{'message':"INVALID USER"})
-    else:
-      return HttpResponse("credentials are not correct"); 
+    # Attempt to reconnect if connection was lost
+    try:
+        connection, _ = opendatabase()
+        cursor = connection.cursor()
+        cursor.execute(query, [identifier, identifier, password])
+        result=cursor.fetchall()
+        if len(result) != 0:
+          check="credit"
+          name = result[0][1]
+          if status == "app":
+            sensor,location=f1(name)
+            if count_app == "0":
+              count_app=10
+              return HttpResponse(result[0][0]+"#"+result[0][1]+"#"+sensor+"#"+location);
+            else:
+              return redirect('home')
+          else:
+            return redirect('home')
+        else:
+          if status == "app":
+            return HttpResponse("credentials are not correct");
+          else:
+            return render(request,'login.html',{'message':"Invalid username/email or password"})
+    except Exception as e2:
+        print("RECONNECTION ERROR",e2)
+        if status == "web":
+          return render(request,'login.html',{'message':"INVALID USER"})
+        else:
+          return HttpResponse("credentials are not correct");
 
 
 

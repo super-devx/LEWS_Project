@@ -1018,9 +1018,6 @@ def secondPart(request):
       ab = False
       sx = []
       sy = []
-      for tick in ax2.get_xticklabels():
-        tick.set_rotation(60)
-        tick.set_fontsize(10)
     if len(set_ty) >= 2 and flag and flag1:
        ax3 = ax.twinx()
        ax3.spines.right.set_position(("axes", 1.2))
@@ -1040,6 +1037,13 @@ def secondPart(request):
   else:
     ax.legend(handles=[p1, p2, p3], loc='upper right')
 
+  for axis in fig.axes:
+      for tick in axis.get_xticklabels():
+          tick.set_rotation(-45)
+          tick.set_ha('left')
+          tick.set_fontsize(10)
+
+  fig.subplots_adjust(bottom=0.2)
   chart = get_graph(fig)
   if len(set_ty) == 1:
     with open('data.csv','w+',newline='') as file:

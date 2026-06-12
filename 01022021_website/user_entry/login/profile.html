@@ -377,18 +377,25 @@
                         <p class="section-description">Your primary account details</p>
                     </div>
                     <div class="row g-4">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="styled-card-readonly">
                                 <div class="card-label">Username</div>
                                 <div class="card-value">{{ user_name }}</div>
                                 <i class="fas fa-user" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 2rem; color: rgba(255,255,255,0.03);"></i>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="styled-card-readonly">
                                 <div class="card-label">Email Address</div>
                                 <div class="card-value">{{ email_id }}</div>
                                 <i class="fas fa-envelope" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 2rem; color: rgba(255,255,255,0.03);"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="styled-card-readonly">
+                                <div class="card-label">Role</div>
+                                <div class="card-value" style="text-transform: capitalize;">{% if user_role == 'mid_level' %}Mid-Level User{% else %}{{ user_role|default:"Visitor"|title }}{% endif %}</div>
+                                <i class="fas fa-shield-alt" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 2rem; color: rgba(255,255,255,0.03);"></i>
                             </div>
                         </div>
                     </div>

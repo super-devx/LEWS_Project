@@ -383,11 +383,13 @@ def register_form(request):
 count_app=100
 
 name=''
+user_role='visitor'
 def login_page(request):
   global count_app
   global name
   global check
   global connection, cursor
+  global user_role
 
   # Handle GET request - show login form
   if request.method != 'POST':
@@ -403,7 +405,7 @@ def login_page(request):
   if request.POST.__contains__('count_app'):
    count_app=request.POST['count_app']
 
-  query = "SELECT uname, email_id, user_type FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
+  query = "SELECT uname, email_id, user_type, role FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
   try:
     cursor.execute(query, [identifier, identifier, password])
     result=cursor.fetchall()
@@ -412,6 +414,7 @@ def login_page(request):
       check="credit"
       # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
       name = result[0][1]
+      user_role = result[0][3] or "visitor"
       
       if status == "app":
         sensor,location=f1(name)
@@ -444,6 +447,7 @@ def login_page(request):
         if len(result) != 0:
           check="credit"
           name = result[0][1]
+          user_role = result[0][3] or "visitor"
           if status == "app":
             sensor,location=f1(name)
             if count_app == "0":
@@ -902,7 +906,8 @@ def secondPartNew(request):
       'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),
       'current_time': now.strftime('%I:%M %p'),
-      'user_name': uname
+      'user_name': uname,
+      'user_role': user_role if 'user_role' in globals() else 'visitor'
     })
   
 
@@ -1043,9 +1048,21 @@ def secondPart(request):
   else:
     csv_file = open('data.csv','w+')
     csv_file.close()
-  return render(request, 'results.html', {'chart': chart})
+  return render(request, 'results.html', {
+      'chart': chart,
+      'user_role': user_role if 'user_role' in globals() else 'visitor'
+  })
   
 def download(request):
+  global check, user_role
+  try:
+      current_role = user_role
+  except NameError:
+      current_role = "visitor"
+      
+  if check != "credit" or current_role != "admin":
+      return HttpResponse("403 Forbidden: You do not have permission to download datasets. Contact an administrator.", status=403)
+
   filename = "data.csv"
   filepath = "data.csv"
   try:
@@ -1209,18 +1226,18 @@ def profile_view(request):
         
     # Re-fetch connection if closed
     try:
-        cursor.execute("SELECT uname, email_id, tenant_id, created_at FROM user_list WHERE email_id=%s", [current_email])
+        cursor.execute("SELECT uname, email_id, tenant_id, created_at, role FROM user_list WHERE email_id=%s", [current_email])
     except Exception:
         connection, _ = opendatabase()
         cursor = connection.cursor()
-        cursor.execute("SELECT uname, email_id, tenant_id, created_at FROM user_list WHERE email_id=%s", [current_email])
+        cursor.execute("SELECT uname, email_id, tenant_id, created_at, role FROM user_list WHERE email_id=%s", [current_email])
         
     user_data = cursor.fetchone()
     
     if not user_data:
         return redirect('signin')
         
-    uname, email_id, tenant_id, created_at = user_data
+    uname, email_id, tenant_id, created_at, role = user_data
     
     # Fetch tenant data
     cursor.execute("SELECT tenant_id, tenant_name, contact_email, remarks FROM tenant WHERE tenant_id=%s", [tenant_id])
@@ -1251,7 +1268,8 @@ def profile_view(request):
         'tenant_id': t_id,
         'tenant_name': display_name,
         'tenant_contact': t_email,
-        'tenant_remarks': t_remarks
+        'tenant_remarks': t_remarks,
+        'user_role': role if role else 'visitor'
     }
     
     return render(request, 'profile.html', context)

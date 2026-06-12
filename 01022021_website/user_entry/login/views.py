@@ -383,11 +383,13 @@ def register_form(request):
 count_app=100
 
 name=''
+current_user_type='USER'
 def login_page(request):
   global count_app
   global name
   global check
   global connection, cursor
+  global current_user_type
 
   # Handle GET request - show login form
   if request.method != 'POST':
@@ -412,6 +414,7 @@ def login_page(request):
       check="credit"
       # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
       name = result[0][1]
+      current_user_type = result[0][2] or "USER"
       
       if status == "app":
         sensor,location=f1(name)
@@ -444,6 +447,7 @@ def login_page(request):
         if len(result) != 0:
           check="credit"
           name = result[0][1]
+          current_user_type = result[0][2] or "USER"
           if status == "app":
             sensor,location=f1(name)
             if count_app == "0":
@@ -902,7 +906,8 @@ def secondPartNew(request):
       'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),
       'current_time': now.strftime('%I:%M %p'),
-      'user_name': uname
+      'user_name': uname,
+      'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
     })
   
 
@@ -1047,9 +1052,21 @@ def secondPart(request):
   else:
     csv_file = open('data.csv','w+')
     csv_file.close()
-  return render(request, 'results.html', {'chart': chart})
+  return render(request, 'results.html', {
+      'chart': chart,
+      'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
+  })
   
 def download(request):
+  global check, current_user_type
+  
+  if check != "credit":
+      return HttpResponse("403 Forbidden: You must be logged in.", status=403)
+      
+  active_user_type = current_user_type if 'current_user_type' in globals() else 'USER'
+  if active_user_type != "SUPERVISOR":
+      return HttpResponse("403 Forbidden: You do not have permission to download datasets. Contact a supervisor.", status=403)
+
   filename = "data.csv"
   filepath = "data.csv"
   try:
@@ -1255,7 +1272,8 @@ def profile_view(request):
         'tenant_id': t_id,
         'tenant_name': display_name,
         'tenant_contact': t_email,
-        'tenant_remarks': t_remarks
+        'tenant_remarks': t_remarks,
+        'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
     }
     
     return render(request, 'profile.html', context)

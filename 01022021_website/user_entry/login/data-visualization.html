@@ -52,12 +52,25 @@
         <!-- Download All Feature -->
         {% if charts %}
         <div class="d-flex justify-content-end mb-3" style="gap: 15px;">
+            {% if user_type == 'SUPERVISOR' %}
             <a href="{% url 'download' %}" class="btn-download" style="border: none; cursor: pointer; padding: 10px 20px; font-weight: 600; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;">
                 <i class="fas fa-database me-2"></i>Download Full Dataset
             </a>
+            {% else %}
+            <a href="javascript:void(0)" class="btn-download" style="border: none; cursor: not-allowed; opacity: 0.5; padding: 10px 20px; font-weight: 600; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;" title="Only Supervisors can download datasets">
+                <i class="fas fa-database me-2"></i>Download Full Dataset
+            </a>
+            {% endif %}
+            
+            {% if user_type == 'USER' %}
+            <button disabled class="btn-download" style="border: none; cursor: not-allowed; opacity: 0.5; padding: 10px 20px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center;" title="Visitors cannot download plots">
+                <i class="fas fa-layer-group me-2"></i>Download All Plots
+            </button>
+            {% else %}
             <button onclick="downloadAllPlots()" class="btn-download" style="border: none; cursor: pointer; padding: 10px 20px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center;">
                 <i class="fas fa-layer-group me-2"></i>Download All Plots
             </button>
+            {% endif %}
         </div>
         {% endif %}
 
@@ -73,9 +86,15 @@
                             <h3 class="chart-title text-white" style="color: white !important;">{{ chart.title }}</h3>
                         </div>
                         <div class="chart-header-right">
+                            {% if user_type == 'USER' %}
+                            <button type="button" disabled style="background: transparent; border: none; outline: none; cursor: not-allowed; opacity: 0.5; color: white; padding: 5px; transition: opacity 0.2s ease;" title="Visitors cannot download plots">
+                                <i class="fas fa-download" style="font-size: 1.2rem;"></i>
+                            </button>
+                            {% else %}
                             <button type="button" onclick="downloadPlot('chart_{{ chart.id|slugify }}', '{{ chart.id }}_Data')" style="background: transparent; border: none; outline: none; cursor: pointer; color: white; padding: 5px; transition: opacity 0.2s ease;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Download Plot">
                                 <i class="fas fa-download" style="font-size: 1.2rem;"></i>
                             </button>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="chart-card-body p-0">

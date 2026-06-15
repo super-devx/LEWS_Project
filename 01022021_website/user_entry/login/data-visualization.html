@@ -82,8 +82,19 @@
                 <div class="chart-card shadow-sm" style="border-radius: 12px; background: #ffffff;">
                     <div class="chart-card-header">
                         <div class="chart-header-left">
-                            <i class="fas fa-chart-line me-2 text-white"></i>
-                            <h3 class="chart-title text-white" style="color: white !important;">{{ chart.title }}</h3>
+                            <div style="display: flex; flex-direction: column;">
+                                <div style="display: flex; align-items: center;">
+                                    <i class="fas fa-chart-line me-2 text-white"></i>
+                                    <h3 class="chart-title text-white" style="margin: 0; color: white !important;">{{ chart.title }}</h3>
+                                </div>
+                                {% if chart.node %}
+                                <div style="margin-top: 5px; margin-left: 28px;">
+                                    <span style="background: var(--sel-accent-500, #ff6b35); color: white; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class="fas fa-map-marker-alt me-1" style="font-size: 11px;"></i> Node: {{ chart.node }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="chart-header-right">
                             {% if user_type == 'USER' %}

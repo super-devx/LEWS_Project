@@ -866,6 +866,15 @@ def secondPartNew(request):
         else:
             x_strings.append(str(dt))
             
+      import re
+      key_upper = str(key).upper()
+      node_match = re.search(r'_(N\d+)_', key_upper + '_')
+      if node_match:
+          node_val = node_match.group(1)
+      else:
+          parts = key_upper.split('_')
+          node_val = parts[1] if len(parts) >= 2 else parts[0]
+            
       charts.append({
           'id': key,
           'title': get_scientific_title(key),
@@ -874,7 +883,8 @@ def secondPartNew(request):
           'smoothed_y': json.dumps(smoothed_y_list),
           'color': color,
           'duration': str(duration),
-          'ylabel': ylabel
+          'ylabel': ylabel,
+          'node': node_val
       })
       chart_index += 1
       
@@ -939,7 +949,7 @@ def secondPartNew(request):
       'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),
       'current_time': now.strftime('%I:%M %p'),
-      'user_name': uname,
+      'user_name': actual_username if 'actual_username' in globals() else uname,
       'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
     })
   

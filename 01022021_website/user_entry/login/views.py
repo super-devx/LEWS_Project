@@ -152,12 +152,16 @@ def f1(email):
     node_records.sort(key=sort_node_key)
     
     location = ""
-    state_name_for_map = "kerala" # Default fallback
+    state_name_for_map = "default" # System fallback
     if tenant_id:
-        cursor.execute("SELECT remarks FROM tenant WHERE tenant_id=%s", (tenant_id,))
-        t_rem = cursor.fetchone()
-        if t_rem and t_rem[0] and " for " in t_rem[0] and " Landslide" in t_rem[0]:
-            state_name_for_map = t_rem[0].split(" for ")[1].split(" Landslide")[0].lower()
+        cursor.execute("SELECT tenant_name, remarks FROM tenant WHERE tenant_id=%s", (tenant_id,))
+        t_res = cursor.fetchone()
+        if t_res:
+            t_name, t_rem = t_res
+            if t_rem and " for " in t_rem and " Landslide" in t_rem:
+                state_name_for_map = t_rem.split(" for ")[1].split(" Landslide")[0].lower()
+            elif t_name:
+                state_name_for_map = t_name.lower().replace(" ", "_")
             
     for row in node_records:
         node_id, loc_name, name = row[0], row[1], row[2]
@@ -240,7 +244,7 @@ def fetch_info(request):
 
   if len(num1)==0 or len(num2)==0:
     sensor,location=f1(name)
-    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
+    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name': actual_username if 'actual_username' in globals() else name, 'user_email': name,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
 
   # Get user's tenant_id from user_list table
   tenant_query = "SELECT tenant_id FROM user_list WHERE email_id = %s"
@@ -272,7 +276,7 @@ def fetch_info(request):
   # If no valid nodes after filtering, show error
   if len(node_id) == 0:
     sensor,location=f1(name)
-    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>NO VALID LOCATIONS SELECTED </font>"})
+    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name': actual_username if 'actual_username' in globals() else name, 'user_email': name,'message_sp':"<font color='RED'>NO VALID LOCATIONS SELECTED </font>"})
 
   # Build query for sensors filtered by tenant_id and allowed node_ids
   query = "SELECT DISTINCT sensor_id FROM sensor_info WHERE "
@@ -339,7 +343,7 @@ def fetch_info(request):
   return render(request,'sensor-data-selection.html',{
     'sensor_id':sensor_id_list,
     'hidden_value':'browser',
-    'user_name': name if name else 'User'
+    'user_name': actual_username if 'actual_username' in globals() else (name if name else 'User'), 'user_email': name
   })
 
 
@@ -353,6 +357,10 @@ def login_form(request):
   return render(request,'login.html')
 
 def register_form(request):
+  try:
+      connection.commit()
+  except Exception:
+      pass
   cursor.execute("SELECT tenant_id, tenant_name, remarks FROM tenant WHERE is_active=true ORDER BY tenant_id")
   tenants = cursor.fetchall()
   
@@ -386,6 +394,7 @@ name=''
 current_user_type='USER'
 def login_page(request):
   global count_app
+  global actual_username
   global name
   global check
   global connection, cursor
@@ -407,6 +416,7 @@ def login_page(request):
 
   query = "SELECT uname, email_id, user_type, tenant_id FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
   try:
+    connection.commit()
     cursor.execute(query, [identifier, identifier, password])
     result=cursor.fetchall()
     print(len(result))
@@ -425,6 +435,7 @@ def login_page(request):
       check="credit"
       # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
       name = result[0][1]
+      actual_username = result[0][0] or result[0][1]
       current_user_type = result[0][2] or "USER"
       
       if status == "app":
@@ -468,6 +479,7 @@ def login_page(request):
                 return render(request,'login.html',{'message':"Tenant is not activated yet. Please contact the owner."})
           check="credit"
           name = result[0][1]
+          actual_username = result[0][0] or result[0][1]
           current_user_type = result[0][2] or "USER"
           if status == "app":
             sensor,location=f1(name)
@@ -519,7 +531,7 @@ def home(request,web=None,amessage=''):
         return render(request,'sensor-selection.html',{
           'sensor':sensor,
           'location':location,
-          'user_name': name if name else 'User',
+          'user_name': actual_username if 'actual_username' in globals() else (name if name else 'User'), 'user_email': name,
           'admin_message':amessage
         })
   except Exception as e:
@@ -1125,6 +1137,7 @@ def activate(request, uidb64, token):
          
 def registration(request):
   global name
+  global actual_username
   global check
   try:
     full_name=request.POST['t1']
@@ -1160,6 +1173,7 @@ def registration(request):
 
     # Automatically log the user in
     name = email
+    actual_username = full_name or email
     check = "credit"
 
     if web == "app":

@@ -405,12 +405,23 @@ def login_page(request):
   if request.POST.__contains__('count_app'):
    count_app=request.POST['count_app']
 
-  query = "SELECT uname, email_id, user_type FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
+  query = "SELECT uname, email_id, user_type, tenant_id FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
   try:
     cursor.execute(query, [identifier, identifier, password])
     result=cursor.fetchall()
     print(len(result))
     if len(result) != 0:
+      tenant_id = result[0][3]
+      if tenant_id:
+        cursor.execute("SELECT is_active FROM tenant WHERE tenant_id=%s", [tenant_id])
+        tenant_res = cursor.fetchone()
+        if tenant_res and not tenant_res[0]:
+          if status == "app":
+            from django.http import JsonResponse
+            return JsonResponse({"message": "Tenant is not activated yet. Please contact the owner."}, status=403)
+          else:
+            return render(request,'login.html',{'message':"Tenant is not activated yet. Please contact the owner."})
+
       check="credit"
       # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
       name = result[0][1]
@@ -445,6 +456,16 @@ def login_page(request):
         cursor.execute(query, [identifier, identifier, password])
         result=cursor.fetchall()
         if len(result) != 0:
+          tenant_id = result[0][3]
+          if tenant_id:
+            cursor.execute("SELECT is_active FROM tenant WHERE tenant_id=%s", [tenant_id])
+            tenant_res = cursor.fetchone()
+            if tenant_res and not tenant_res[0]:
+              if status == "app":
+                from django.http import JsonResponse
+                return JsonResponse({"message": "Tenant is not activated yet. Please contact the owner."}, status=403)
+              else:
+                return render(request,'login.html',{'message':"Tenant is not activated yet. Please contact the owner."})
           check="credit"
           name = result[0][1]
           current_user_type = result[0][2] or "USER"
@@ -1338,3 +1359,43 @@ def update_profile(request):
                 messages.error(request, 'Incorrect current password.')
                 
     return redirect('profile')
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+@csrf_exempt
+def api_register_tenant(request):
+    global connection, cursor
+    if request.method == 'POST':
+        tenant_name = request.POST.get('tenant_name')
+        contact_email = request.POST.get('contact_email')
+        remarks = request.POST.get('remarks')
+        
+        if not tenant_name or not contact_email:
+            return JsonResponse({"success": False, "message": "Tenant name and contact email are required."}, status=400)
+            
+        try:
+            # Ensure connection
+            try:
+                cursor.execute("SELECT 1")
+            except Exception:
+                connection, _ = opendatabase()
+                cursor = connection.cursor()
+                
+            # Explicitly insert with is_active = False
+            query = """
+                INSERT INTO tenant (tenant_name, contact_email, remarks, is_active, created_at)
+                VALUES (%s, %s, %s, FALSE, NOW())
+            """
+            cursor.execute(query, [tenant_name, contact_email, remarks])
+            connection.commit()
+            
+            return JsonResponse({
+                "success": True, 
+                "message": "Registration completed. To activate the tenant please contact the owner."
+            })
+        except Exception as e:
+            print("Error registering tenant:", e)
+            return JsonResponse({"success": False, "message": "Failed to register tenant. Please try again."}, status=500)
+    
+    return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)

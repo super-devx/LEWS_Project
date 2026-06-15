@@ -30,4 +30,5 @@ urlpatterns = [
     path('coming-soon', views.coming_soon, name='coming_soon'),
     path('team', views.team, name='team'),
     path('activate/<str:uidb64>/<str:token>/', views.activate, name='activate'),
+    path('api/tenants/register', views.api_register_tenant, name='api_register_tenant'),
 ]

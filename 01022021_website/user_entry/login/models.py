@@ -7,7 +7,7 @@ class Tenant(models.Model):
     tenant_id = models.AutoField(primary_key=True)
     tenant_name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     contact_email = models.CharField(max_length=100, blank=True, null=True)
     settings = models.JSONField(blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)

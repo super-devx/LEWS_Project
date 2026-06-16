@@ -945,6 +945,14 @@ def secondPartNew(request):
     except Exception as e:
         print("Error generating full dataset CSV:", e)
 
+    # Save metadata for Cross-Correlation feature
+    request.session['cc_sensors'] = [{'id': c['id'], 'title': c['title']} for c in charts]
+    try:
+        request.session['cc_from_format'] = from_format
+        request.session['cc_to_format'] = to_Format
+    except:
+        pass
+
     return render(request, 'data-visualization.html', {
       'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),

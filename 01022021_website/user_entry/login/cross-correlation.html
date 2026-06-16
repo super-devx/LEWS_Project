@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Correlation Analysis - LEWS</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cross-correlation.css' %}">
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    
+    <script>
+        // Setup CSRF token for AJAX requests
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+    </script>
+</head>
+<body>
+    {% include 'navbar-include.html' %}
+    
+    <main id="main-content" class="bg-light pb-5">
+        <div class="container pt-4">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h2 class="page-title"><i class="fas fa-project-diagram me-2"></i>Cross-Correlation Analysis</h2>
+                    </div>
+                    <p class="text-muted mt-2 instruction-msg">
+                        <i class="fas fa-info-circle me-1"></i>Select any two sensors to perform cross-correlation analysis.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Sensor Selection Card -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm selection-card" style="border-radius: 12px; border: none;">
+                        <div class="card-body p-4">
+                            {% if not sensors %}
+                            <div class="alert alert-warning mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No sufficient sensor data available for cross-correlation analysis. Please generate a visualization first.
+                            </div>
+                            {% else %}
+                            <form id="crossCorrelationForm">
+                                <div class="row align-items-end g-3">
+                                    <div class="col-md-4">
+                                        <label for="sensorA" class="form-label fw-bold">Sensor A</label>
+                                        <select class="form-select custom-select" id="sensorA" required>
+                                            <option value="" selected disabled>Select first sensor...</option>
+                                            {% for sensor in sensors %}
+                                            <option value="{{ sensor.id }}">{{ sensor.title }} ({{ sensor.id }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="sensorB" class="form-label fw-bold">Sensor B</label>
+                                        <select class="form-select custom-select" id="sensorB" required>
+                                            <option value="" selected disabled>Select second sensor...</option>
+                                            {% for sensor in sensors %}
+                                            <option value="{{ sensor.id }}">{{ sensor.title }} ({{ sensor.id }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex gap-2 w-100">
+                                            <button type="submit" class="btn btn-primary flex-grow-1 analyze-btn" id="analyzeBtn" disabled>
+                                                <i class="fas fa-chart-line me-2"></i>Analyze
+                                            </button>
+                                            <button type="button" onclick="window.location.href=homeUrl" class="btn btn-outline-primary flex-grow-1" style="background-color: transparent; border: 1px solid var(--sel-primary-main, #1A365D); color: var(--sel-primary-main, #1A365D); transition: all 0.2s;" onmouseover="this.style.backgroundColor='var(--sel-primary-main, #1A365D)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--sel-primary-main, #1A365D)';">
+                                                <i class="fas fa-magic me-2"></i>Generate Visualization
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="validationMsg" class="text-danger mt-2 small" style="display: none;">
+                                    Please select two distinct sensors.
+                                </div>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-5" style="display: none;">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="text-muted">Computing cross-correlation...</h5>
+                <p class="text-muted small">Aligning timestamps and performing statistical analysis</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="alert alert-danger shadow-sm" style="display: none; border-radius: 12px;">
+                <i class="fas fa-exclamation-circle me-2"></i><span id="errorMsg"></span>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" style="display: none;">
+                <!-- Warning State -->
+                <div id="warningState" class="alert alert-warning shadow-sm mb-4" style="display: none; border-radius: 12px; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;">
+                    <i class="fas fa-exclamation-triangle me-2"></i><span id="warningMsg"></span>
+                </div>
+                
+                <!-- Graph Card -->
+                <div class="card shadow-sm mb-4" style="border-radius: 12px; border: none; overflow: hidden;">
+                    <div class="card-header bg-white py-3" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                        <h5 class="mb-0 fw-bold" id="graphTitle">Cross-Correlation Chart</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="ccChart" style="width: 100%; height: 700px;"></div>
+                    </div>
+                </div>
+
+                <!-- Metrics Card -->
+                <div class="card shadow-sm" style="border-radius: 12px; border: none; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+                    <div class="card-body p-4 text-center">
+                        <h5 class="text-muted mb-3 text-uppercase" style="font-size: 0.9rem; letter-spacing: 1px;">Correlation Coefficient</h5>
+                        <div class="display-4 fw-bold mb-2" id="metricValue" style="color: var(--sel-accent-500, #ff6b35);">0.00</div>
+                        <div class="d-inline-block px-4 py-2 rounded-pill mt-2" id="metricInterpretation" style="background: rgba(255, 107, 53, 0.1); color: var(--sel-accent-500, #ff6b35); font-weight: 600;">
+                            Interpretation
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+    
+    {% include 'footer-include.html' %}
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/nav.js' %}"></script>
+    <script>
+        const analyzeUrl = "{% url 'cross_correlation_analyze' %}";
+        const homeUrl = "{% url 'home' %}";
+    </script>
+    <script src="{% static 'js/cross-correlation.js' %}"></script>
+</body>
+</html>

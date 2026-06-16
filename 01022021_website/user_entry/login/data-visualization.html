@@ -193,6 +193,9 @@
                     <span>Generated on {{ current_date|default:"Today" }} at {{ current_time|default:"Now" }}</span>
                 </div>
                 <div class="footer-actions">
+                    <a href="{% url 'cross_correlation' %}" class="btn-footer-action btn-secondary">
+                        <i class="fas fa-project-diagram me-2"></i>Cross-Correlate
+                    </a>
                     <a href="{% url 'monitoring' %}" class="btn-footer-action btn-secondary">
                         <i class="fas fa-chart-line me-2"></i>Monitoring Scale
                     </a>

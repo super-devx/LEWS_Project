@@ -1,7 +1,7 @@
 from django.urls import path
 from django.conf.urls import url
 from . import views
-
+from . import cross_correlation_views
 urlpatterns = [
     path('login', views.home, name=''),
     path('', views.index, name='landing'),
@@ -31,4 +31,6 @@ urlpatterns = [
     path('team', views.team, name='team'),
     path('activate/<str:uidb64>/<str:token>/', views.activate, name='activate'),
     path('api/tenants/register', views.api_register_tenant, name='api_register_tenant'),
+    path('cross-correlation/', cross_correlation_views.cross_correlation_page, name='cross_correlation'),
+    path('cross-correlation/analyze/', cross_correlation_views.cross_correlation_analyze, name='cross_correlation_analyze'),
 ]

@@ -94,7 +94,7 @@
                             </h2>
                         </div>
                         <div class="map-overview-container" id="mapOverview">
-                            <img src="{% static 'images/slopes/default.png' %}" id="stateMapImage" alt="Terrain Map"
+                            <img src="{% static 'images/slopes/default.png' %}?v=new" id="stateMapImage" alt="Terrain Map"
                                 class="terrain-map">
                             <div id="pinsContainer"></div>
                         </div>
@@ -240,7 +240,7 @@
                 
                 // If the dynamic image is not found, fallback to a default image
                 imgElement.on('error', function() {
-                    $(this).attr('src', '/static/images/slopes/default.png'); // Show the bunny "OH NO" image
+                    $(this).attr('src', '/static/images/slopes/default.png?v=new'); // Show the mountain landscape image
                     $(this).off('error'); // Prevent infinite loop
                 });
 

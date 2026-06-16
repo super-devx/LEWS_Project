@@ -11,6 +11,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsSection = document.getElementById('resultsSection');
     const warningState = document.getElementById('warningState');
     const warningMsg = document.getElementById('warningMsg');
+    const generateVisBtn = document.getElementById('generateVisBtn');
+    
+    let graphGenerated = false;
+    
+    function updateGenerateVisButton() {
+        if (graphGenerated) {
+            generateVisBtn.disabled = false;
+            generateVisBtn.title = "";
+            generateVisBtn.className = "btn btn-outline-primary flex-grow-1";
+            generateVisBtn.style.cssText = "background-color: transparent; border: 1px solid var(--sel-primary-main, #1A365D); color: var(--sel-primary-main, #1A365D); transition: all 0.2s;";
+            generateVisBtn.setAttribute('onmouseover', "this.style.backgroundColor='var(--sel-primary-main, #1A365D)'; this.style.color='white';");
+            generateVisBtn.setAttribute('onmouseout', "this.style.backgroundColor='transparent'; this.style.color='var(--sel-primary-main, #1A365D)';");
+            generateVisBtn.setAttribute('onclick', "window.location.href=homeUrl");
+        } else {
+            generateVisBtn.disabled = true;
+            generateVisBtn.title = "Please generate and view the cross-correlation graph before creating a visualization.";
+            generateVisBtn.className = "btn btn-secondary flex-grow-1";
+            generateVisBtn.style.cssText = "opacity: 0.5; cursor: not-allowed; pointer-events: none;";
+            generateVisBtn.removeAttribute('onmouseover');
+            generateVisBtn.removeAttribute('onmouseout');
+            generateVisBtn.removeAttribute('onclick');
+        }
+    }
     
     const metricValue = document.getElementById('metricValue');
     const metricInterpretation = document.getElementById('metricInterpretation');
@@ -44,6 +67,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Reset state
+            graphGenerated = false;
+            updateGenerateVisButton();
             
             const valA = sensorA.value;
             const valB = sensorB.value;
@@ -189,8 +216,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         const config = {responsive: true, displayModeBar: false};
-        
         Plotly.newPlot('ccChart', [traceA, traceB], layout, config);
+        
+        // Immediately enable the Generate Visualization button since graph data is present and rendering
+        graphGenerated = true;
+        updateGenerateVisButton();
         
         // Scroll to results
         setTimeout(() => {

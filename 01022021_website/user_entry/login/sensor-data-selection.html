@@ -58,6 +58,15 @@
     <!-- Navigation -->
     {% include 'navbar-include.html' %}
 
+    <!-- Full Page Loading Overlay -->
+    <div id="fullPageLoader" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 255, 255, 0.75); z-index: 99999; backdrop-filter: blur(4px); pointer-events: all; flex-direction: column; justify-content: center; align-items: center;">
+        <div class="spinner-border text-primary" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.35em;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="mt-4 fw-bold text-primary" style="font-family: 'Poppins', sans-serif;">Generating Visualization...</h4>
+        <p class="text-muted" style="font-family: 'Open Sans', sans-serif; font-size: 1.1rem;">Please wait while sensor data is being processed.</p>
+    </div>
+
     <!-- Main Content -->
     <main id="main-content">
         <!-- Animated Background -->
@@ -301,6 +310,22 @@
                 `);
             }
 
+            // Loader Management
+            window.showLoader = function() {
+                $('#fullPageLoader').css('display', 'flex');
+                $('#dataConfigForm button[type="submit"]').prop('disabled', true).css('pointer-events', 'none');
+                $('body').attr('aria-busy', 'true');
+                $('#main-content').css('pointer-events', 'none');
+            };
+
+            window.hideLoader = function() {
+                isSubmitting = false;
+                $('#fullPageLoader').css('display', 'none');
+                $('#dataConfigForm button[type="submit"]').prop('disabled', false).css('pointer-events', 'auto');
+                $('body').removeAttr('aria-busy');
+                $('#main-content').css('pointer-events', 'auto');
+            };
+
             // Update selection count
             function updateSelectionCount() {
                 const sensorCount = $('input[name="sensor_list_id"]:checked').length;
@@ -330,8 +355,16 @@
                 updateSelectionCount();
             });
 
+            // Interaction Lock Flag
+            let isSubmitting = false;
+
             // Form validation
             $('#dataConfigForm').on('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+
                 const sensorSelected = $('input[name="sensor_list_id"]:checked').length > 0;
 
                 if (!sensorSelected) {
@@ -363,7 +396,24 @@
                     return false;
                 }
 
-                return true;
+                // Validation passed - Lock interactions and show loader
+                isSubmitting = true;
+                
+                try {
+                    window.showLoader();
+                    return true;
+                } catch(error) {
+                    console.error("Submission error:", error);
+                    window.hideLoader();
+                    return false;
+                }
+            });
+
+            // Handle bfcache (user clicks Back from results page)
+            $(window).on('pageshow', function(event) {
+                if (event.originalEvent.persisted) {
+                    window.hideLoader();
+                }
             });
 
             // Real-time validation enhancement

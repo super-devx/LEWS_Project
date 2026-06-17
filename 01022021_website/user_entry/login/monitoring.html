@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}?v=3.2">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
-</head>
+    <link rel="stylesheet" href="{% static 'css/monitoring-dashboard.css' %}">
 
 <body>
     <!-- Navigation -->
@@ -31,114 +31,137 @@
 
     <!-- Main Content -->
     <main id="main-content">
-        <!-- Animated Background -->
-        <div class="selection-background">
-            <div class="bg-pattern"></div>
-        </div>
+        <div class="container">
+            <div class="dashboard-wrapper">
+                <!-- Background Grid & Effects -->
+                <div class="dashboard-bg-grid"></div>
+                <div class="dashboard-mesh"></div>
 
-        <!-- Heading Section -->
-        <div class="container text-center" style="margin-top: 1.5rem; margin-bottom: 2rem; position: relative; z-index: 10;">
-            <h2 class="fw-bold mb-0" style="color: #0f1623; font-family: 'Poppins', sans-serif; font-size: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 20px;">
-                <div style="display: flex; align-items: center;">
-                    <span style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
-                    <span style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-left: 8px;"></span>
-                </div>
-                Landslide Monitoring Scale
-                <div style="display: flex; align-items: center;">
-                    <span style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-right: 8px;"></span>
-                    <span style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
-                </div>
-            </h2>
-        </div>
-
-        <!-- Landslide Monitoring Scale -->
-        <div class="container" style="max-width: 1000px; position: relative; z-index: 10;">
-            <div class="monitoring-scale-wrapper">
-                <div class="scale-title-bar">
-                    <div class="pointer-container" id="monitoring-pointer">
-                        <span class="pointer-text" id="monitoring-pointer-text">Current Status</span>
-                        <i class="fas fa-arrow-down pointer-arrow"></i>
-                    </div>
-                </div>
-
-                <div class="scale-bar">
-                    <div class="scale-segment bg-green" id="seg-green">
-                        <div class="scale-num">1</div>
-                        <span>Green</span>
-                    </div>
-                    <div class="scale-segment bg-yellow" id="seg-yellow">
-                        <div class="scale-num">2</div>
-                        <span>Yellow</span>
-                    </div>
-                    <div class="scale-segment bg-orange" id="seg-orange">
-                        <div class="scale-num">3</div>
-                        <span>Orange</span>
-                    </div>
-                    <div class="scale-segment bg-red" id="seg-red">
-                        <div class="scale-num">4</div>
-                        <span>Red</span>
-                    </div>
-                </div>
-
-                <div class="status-cards-grid">
-                    <!-- Green Card -->
-                    <div class="status-card status-card-green">
-                        <div class="status-header">
-                            <i class="fas fa-check-circle status-icon"></i>
-                            <div class="status-title">GREEN</div>
-                            <div class="status-subtitle">Safe / Normal</div>
+                <div class="dashboard-content">
+                    <!-- Live Header -->
+                    <div class="dashboard-header">
+                        <div class="live-badge">
+                            <div class="pulse-dot"></div>
+                            LIVE MONITORING
                         </div>
-                        <ul class="status-list">
-                            <li>No significant movement detected</li>
-                            <li>Conditions are stable</li>
-                            <li>Routine monitoring</li>
-                            <li>No action required</li>
-                        </ul>
+                        <h2 class="fw-bold mb-0" style="font-size: 1.8rem; letter-spacing: 1px;">Landslide Risk Analytics</h2>
+                        <div class="last-updated" id="last-updated-time">
+                            <i class="far fa-clock"></i> Updated: Just now
+                        </div>
                     </div>
 
-                    <!-- Yellow Card -->
-                    <div class="status-card status-card-yellow">
-                        <div class="status-header">
-                            <i class="fas fa-exclamation-triangle status-icon"></i>
-                            <div class="status-title">YELLOW</div>
-                            <div class="status-subtitle">Caution</div>
+                    <!-- Circular Gauge Section -->
+                    <div class="meter-container">
+                        <!-- Radar Beacon -->
+                        <div class="radar-beacon" id="radar-beacon">
+                            <div class="beacon-ring" id="beacon-ring-1"></div>
+                            <div class="beacon-ring" id="beacon-ring-2" style="animation-delay: 1s;"></div>
+                            <i class="fas fa-satellite-dish"></i>
                         </div>
-                        <ul class="status-list">
-                            <li>Minor ground movement detected</li>
-                            <li>Monitor closely</li>
-                            <li>Possible risk development</li>
-                            <li>Stay alert</li>
-                        </ul>
+
+                        <!-- SVG Gauge -->
+                        <svg class="gauge-svg" viewBox="0 0 400 200">
+                            <!-- Definitions for Gradients -->
+                            <defs>
+                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#4ade80" />
+                                    <stop offset="33%" stop-color="#facc15" />
+                                    <stop offset="66%" stop-color="#fb923c" />
+                                    <stop offset="100%" stop-color="#ef4444" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- Background Arc -->
+                            <path class="gauge-bg" d="M 20 200 A 180 180 0 0 1 380 200" />
+                            
+                            <!-- Filled Arc -->
+                            <path class="gauge-fill" id="gauge-fill" d="M 20 200 A 180 180 0 0 1 380 200" stroke="url(#gaugeGradient)" />
+                            
+                            <!-- Needle -->
+                            <g class="gauge-needle" id="gauge-needle">
+                                <path class="needle-path" d="M 195 200 L 200 40 L 205 200 Z" />
+                                <circle class="needle-center" cx="200" cy="200" r="10" />
+                            </g>
+                        </svg>
+
+                        <!-- Labels -->
+                        <div class="gauge-labels">
+                            <span class="g-label safe">0 (Safe)</span>
+                            <span class="g-label danger">100 (Critical)</span>
+                        </div>
+
+                        <!-- Score Display -->
+                        <div class="meter-score-display">
+                            <div class="score-value" id="score-value">0</div>
+                            <div class="score-status" id="score-status">CALCULATING...</div>
+                        </div>
                     </div>
 
-                    <!-- Orange Card -->
-                    <div class="status-card status-card-orange">
-                        <div class="status-header">
-                            <i class="fas fa-exclamation-triangle status-icon"></i>
-                            <div class="status-title">ORANGE</div>
-                            <div class="status-subtitle">Warning</div>
+                    <!-- Glassmorphism Cards Grid -->
+                    <div class="dashboard-cards">
+                        <!-- Green Card -->
+                        <div class="dash-card card-green" id="card-green">
+                            <div class="card-header">
+                                <i class="fas fa-shield-alt card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">GREEN ZONE</span>
+                                    <span class="card-subtitle">Normal / Safe Status</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> No significant movement detected</li>
+                                <li><i class="fas fa-play"></i> Conditions remain perfectly stable</li>
+                                <li><i class="fas fa-play"></i> Routine background monitoring</li>
+                            </ul>
                         </div>
-                        <ul class="status-list">
-                            <li>Significant movement detected</li>
-                            <li>High risk of landslide</li>
-                            <li>Prepare for action</li>
-                            <li>Follow safety protocols</li>
-                        </ul>
-                    </div>
 
-                    <!-- Red Card -->
-                    <div class="status-card status-card-red">
-                        <div class="status-header">
-                            <i class="fas fa-exclamation-circle status-icon"></i>
-                            <div class="status-title">RED</div>
-                            <div class="status-subtitle">Danger</div>
+                        <!-- Yellow Card -->
+                        <div class="dash-card card-yellow" id="card-yellow">
+                            <div class="card-header">
+                                <i class="fas fa-exclamation-triangle card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">YELLOW ZONE</span>
+                                    <span class="card-subtitle">Caution Required</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> Minor ground movement detected</li>
+                                <li><i class="fas fa-play"></i> Possible risk development</li>
+                                <li><i class="fas fa-play"></i> Heightened alertness level</li>
+                            </ul>
                         </div>
-                        <ul class="status-list">
-                            <li>Severe movement detected</li>
-                            <li>Imminent landslide risk</li>
-                            <li>Take immediate action</li>
-                            <li>Evacuate if advised</li>
-                        </ul>
+
+                        <!-- Orange Card -->
+                        <div class="dash-card card-orange" id="card-orange">
+                            <div class="card-header">
+                                <i class="fas fa-engine-warning card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">ORANGE ZONE</span>
+                                    <span class="card-subtitle">Active Warning</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> Significant movement recorded</li>
+                                <li><i class="fas fa-play"></i> High probability of landslide</li>
+                                <li><i class="fas fa-play"></i> Prepare emergency protocols</li>
+                            </ul>
+                        </div>
+
+                        <!-- Red Card -->
+                        <div class="dash-card card-red" id="card-red">
+                            <div class="card-header">
+                                <i class="fas fa-radiation-alt card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">RED ZONE</span>
+                                    <span class="card-subtitle">Critical Danger</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> Severe movement in progress</li>
+                                <li><i class="fas fa-play"></i> Imminent disaster risk</li>
+                                <li><i class="fas fa-play"></i> Immediate evacuation required</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -157,74 +180,115 @@
     <script type="module">
         import { getRiskScore, STATUS_RANGES } from "{% static 'js/riskEngine.js' %}";
 
+        function updateTimestamp() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            document.getElementById('last-updated-time').innerHTML = `<i class="far fa-clock"></i> Updated: ${dateStr}, ${timeStr}`;
+        }
+
         function updateUIWithRiskScore(prediction) {
             const { score } = prediction;
-            const pointer = document.getElementById('monitoring-pointer');
-            const pointerText = document.getElementById('monitoring-pointer-text');
-            if (!pointer) return;
             
-            let level = 1;
+            // Constrain score between 0 and 100
+            const displayScore = Math.max(0, Math.min(100, score));
+            
             let statusText = "SAFE";
-            let color = "#16a34a";
-            let activeCardClass = ".status-card-green";
+            let color = "#4ade80"; // Green
+            let activeCardId = "card-green";
 
-            if (score >= STATUS_RANGES.GREEN[0] && score <= STATUS_RANGES.GREEN[1]) {
-                level = 1;
-                statusText = "SAFE";
-                color = "#16a34a";
-                activeCardClass = ".status-card-green";
-            } else if (score >= STATUS_RANGES.YELLOW[0] && score <= STATUS_RANGES.YELLOW[1]) {
-                level = 2;
+            if (displayScore >= STATUS_RANGES.GREEN[0] && displayScore <= STATUS_RANGES.GREEN[1]) {
+                statusText = "SAFE ZONE";
+                color = "#4ade80";
+                activeCardId = "card-green";
+            } else if (displayScore >= STATUS_RANGES.YELLOW[0] && displayScore <= STATUS_RANGES.YELLOW[1]) {
                 statusText = "CAUTION";
-                color = "#ca8a04";
-                activeCardClass = ".status-card-yellow";
-            } else if (score >= STATUS_RANGES.ORANGE[0] && score <= STATUS_RANGES.ORANGE[1]) {
-                level = 3;
+                color = "#facc15";
+                activeCardId = "card-yellow";
+            } else if (displayScore >= STATUS_RANGES.ORANGE[0] && displayScore <= STATUS_RANGES.ORANGE[1]) {
                 statusText = "WARNING";
-                color = "#ea580c";
-                activeCardClass = ".status-card-orange";
-            } else if (score >= STATUS_RANGES.RED[0] && score <= STATUS_RANGES.RED[1]) {
-                level = 4;
-                statusText = "DANGER";
-                color = "#dc2626";
-                activeCardClass = ".status-card-red";
+                color = "#fb923c";
+                activeCardId = "card-orange";
+            } else if (displayScore >= STATUS_RANGES.RED[0] && displayScore <= STATUS_RANGES.RED[1]) {
+                statusText = "CRITICAL DANGER";
+                color = "#ef4444";
+                activeCardId = "card-red";
             }
 
-            // Map level (1-4) to left percentage (12.5%, 37.5%, 62.5%, 87.5%)
-            const percentage = 12.5 + ((level - 1) * 25);
-            pointer.style.left = percentage + '%';
-            pointer.style.transition = 'left 0.5s ease-in-out';
+            // Update Score Values
+            const scoreValueEl = document.getElementById('score-value');
+            const scoreStatusEl = document.getElementById('score-status');
+            
+            // Number counter animation
+            let currentDisplay = 0;
+            const duration = 1500;
+            const steps = 60;
+            const stepTime = duration / steps;
+            const increment = displayScore / steps;
+            
+            const timer = setInterval(() => {
+                currentDisplay += increment;
+                if (currentDisplay >= displayScore) {
+                    currentDisplay = displayScore;
+                    clearInterval(timer);
+                }
+                scoreValueEl.innerText = Math.round(currentDisplay);
+            }, stepTime);
 
-            // Change text to reflect score
-            pointerText.innerHTML = `Current Status: ${statusText}<br>Risk Score: ${score}/100`;
-            pointerText.style.color = color;
-            pointerText.style.textAlign = 'center';
-            pointerText.style.lineHeight = '1.4';
+            scoreStatusEl.innerText = statusText;
+            scoreValueEl.style.color = color;
+            scoreStatusEl.style.color = color;
 
-            // Reset all cards
-            document.querySelectorAll('.status-card').forEach(card => {
-                card.style.transform = 'scale(1)';
-                card.style.boxShadow = 'none';
-                card.style.border = '1px solid #e5e7eb';
-                card.style.opacity = '0.5';
-                card.style.backgroundColor = '#ffffff';
-                card.style.transition = 'all 0.3s ease';
+            // Gauge Fill Animation
+            const gaugeFill = document.getElementById('gauge-fill');
+            const circumference = 565.48; // PI * R (180)
+            const offset = circumference - ((displayScore / 100) * circumference);
+            
+            // Delay slightly for effect
+            setTimeout(() => {
+                gaugeFill.style.strokeDashoffset = offset;
+            }, 100);
+
+            // Needle Rotation Animation
+            const gaugeNeedle = document.getElementById('gauge-needle');
+            // Range is from -90deg (0) to 90deg (100)
+            const rotation = -90 + ((displayScore / 100) * 180);
+            
+            setTimeout(() => {
+                gaugeNeedle.style.transform = `rotate(${rotation}deg)`;
+            }, 100);
+
+            // Radar Beacon Update
+            const radarBeacon = document.getElementById('radar-beacon');
+            radarBeacon.style.background = `${color}33`; // 20% opacity
+            const beaconRings = document.querySelectorAll('.beacon-ring');
+            beaconRings.forEach(ring => {
+                ring.style.borderColor = color;
             });
 
-            // Highlight active card
-            const activeCard = document.querySelector(activeCardClass);
+            // Card Highlight Logic
+            document.querySelectorAll('.dash-card').forEach(card => {
+                card.classList.remove('active-card');
+                card.style.boxShadow = 'none';
+            });
+
+            const activeCard = document.getElementById(activeCardId);
             if (activeCard) {
-                activeCard.style.opacity = '1';
-                activeCard.style.transform = 'scale(1.05)';
-                activeCard.style.boxShadow = `0 10px 25px ${color}40`; // 25% opacity shadow
-                activeCard.style.border = `3px solid ${color}`;
-                activeCard.style.backgroundColor = `${color}0D`; // 5% opacity background
+                activeCard.classList.add('active-card');
+                activeCard.style.boxShadow = `0 15px 35px ${color}40`; // 25% opacity colored shadow
             }
         }
         
-        // Initialize based on risk engine
-        const prediction = getRiskScore();
-        updateUIWithRiskScore(prediction);
+        // Initialize
+        updateTimestamp();
+        // Update timestamp every second
+        setInterval(updateTimestamp, 1000);
+        
+        // Let the page render, then trigger animation
+        setTimeout(() => {
+            const prediction = getRiskScore();
+            updateUIWithRiskScore(prediction);
+        }, 300);
     </script>
 </body>
 </html>

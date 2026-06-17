@@ -220,9 +220,9 @@
 
         <!-- Sticky Back Button -->
         <div style="position: sticky; bottom: 32px; width: max-content; z-index: 100; margin-bottom: -45px; transform: translateY(32px);">
-            <a href="{% url 'home' %}" class="btn-action btn-primary" style="box-shadow: 0 6px 16px rgba(255, 122, 61, 0.25);">
+            <button type="button" onclick="window.history.back()" class="btn-action btn-primary" style="box-shadow: 0 6px 16px rgba(255, 122, 61, 0.25); border: none;">
                 <i class="fas fa-arrow-left me-2"></i>Back
-            </a>
+            </button>
         </div>
 
     </div>

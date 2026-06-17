@@ -234,13 +234,19 @@ def insert(request):
   
   
 
-@no_cache
 def fetch_info(request):
-  num1=[]
-  num2=[]
-  ty=request.POST['val']
-  num1 = request.POST.getlist('st')
-  num2 = request.POST.getlist('loc')
+  if request.method == 'POST':
+    request.session['fetch_info_payload'] = {
+        'val': request.POST.get('val', ''),
+        'st': request.POST.getlist('st'),
+        'loc': request.POST.getlist('loc')
+    }
+    return redirect('fetch_info')
+
+  session_data = request.session.get('fetch_info_payload', {})
+  ty = session_data.get('val', '')
+  num1 = session_data.get('st', [])
+  num2 = session_data.get('loc', [])
 
   if len(num1)==0 or len(num2)==0:
     sensor,location=f1(name)
@@ -551,11 +557,15 @@ def dateFix(date):
       return date
 
 
-def dateFormat(request, date, x):
-  from_hr = request.POST['from_hr']
-  from_min = request.POST['from_min']
-  to_hr = request.POST['to_hr']
-  to_min = request.POST['to_min']
+def dateFormat(request_or_dict, date, x):
+  if hasattr(request_or_dict, 'POST'):
+      data = request_or_dict.POST
+  else:
+      data = request_or_dict
+  from_hr = data.get('from_hr', '00')
+  from_min = data.get('from_min', '00')
+  to_hr = data.get('to_hr', '23')
+  to_min = data.get('to_min', '59')
   if x=='f':
     format = str(date) + ' ' + from_hr + ':' + from_min + ':00'
   else:
@@ -565,6 +575,8 @@ def dateFormat(request, date, x):
 
 
 def queryExec(query):
+  if not query or not query.strip():
+      raise ValueError("Generated SQL query is empty")
   # print(query)
   cursor.execute(query)
   result = cursor.fetchall()
@@ -716,18 +728,25 @@ def get_graph(plot):
 
 def firstPart(request):
   try:
-    
-    sensor_id = request.POST.getlist('sensor_list_id')
-    from_date = request.POST['from_date']
-    chart_type = request.POST['chart_type']
-    to_date = request.POST['to_date']
+    if request.method == 'POST':
+        data = request.POST
+        sensor_id = request.POST.getlist('sensor_list_id')
+    else:
+        data = request.session.get('second_part_payload', {})
+        sensor_id = request.session.get('second_part_sensors', [])
+
+    from_date = data.get('from_date', '')
+    chart_type = data.get('chart_type', '')
+    to_date = data.get('to_date', '')
     from_date = dateFix(from_date)
-    from_format = dateFormat(request, from_date, 'f')
+    from_format = dateFormat(data, from_date, 'f')
     to_date = dateFix(to_date)
-    to_Format = dateFormat(request, to_date, 't')
+    to_Format = dateFormat(data, to_date, 't')
     query = prepQuery(chart_type, sensor_id, to_Format, from_format)
     return query
-  except:
+  except Exception as e:
+    import traceback
+    traceback.print_exc()
     return None
 
 def get_scientific_title(key):
@@ -744,20 +763,35 @@ def get_scientific_color(index):
   colors = ['#1f77b4', '#2E8B57', '#D62728', '#FF7F0E', '#9467BD']
   return colors[index % len(colors)]
 
-@no_cache
 def secondPartNew(request):
+  if request.method == 'POST':
+      request.session['second_part_payload'] = request.POST.dict()
+      request.session['second_part_sensors'] = request.POST.getlist('sensor_list_id')
+      return redirect('display_info')
+      
+  payload = request.session.get('second_part_payload', {})
+  sensor_id = request.session.get('second_part_sensors', [])
+
   global name
   Dict = {}
   Labels = {}
   plt.switch_backend('AGG')
   q = firstPart(request)
-  node_records = queryExec(q)
-  data = setData(node_records)
-  sensor_id = request.POST.getlist('sensor_list_id')
-  duration = request.POST['duration']
+  print("Generated Query:", q)
+  print("Query Length:", len(q) if q else 0)
+  print("Selected Sensors:", sensor_id)
+  
   try:
-    from_date_str = request.POST.get('from_date', '').strip()
-    to_date_str = request.POST.get('to_date', '').strip()
+      node_records = queryExec(q)
+  except ValueError as e:
+      print(f"Query Validation Error: {e}")
+      node_records = []
+      
+  data = setData(node_records)
+  duration = payload.get('duration', '')
+  try:
+    from_date_str = payload.get('from_date', '').strip()
+    to_date_str = payload.get('to_date', '').strip()
     from_date_str = dateFix(from_date_str)
     to_date_str = dateFix(to_date_str)
     import datetime as dt_mod
@@ -769,7 +803,7 @@ def secondPartNew(request):
       duration = "168"
   except Exception as e:
     pass
-  query_type=request.POST.get('query_type',None)
+  query_type=payload.get('query_type',None)
   Labels.update(labelDict(sensor_id))
   Dict.update(sensorDict(data))
   set_ty = getPre(preQuery(sensor_id))
@@ -922,13 +956,13 @@ def secondPartNew(request):
         
     try:
         import csv
-        sensor_id_list = request.POST.getlist('sensor_list_id')
-        from_date_str = request.POST['from_date']
-        to_date_str = request.POST['to_date']
+        sensor_id_list = sensor_id
+        from_date_str = payload.get('from_date', '')
+        to_date_str = payload.get('to_date', '')
         from_date_fixed = dateFix(from_date_str)
         to_date_fixed = dateFix(to_date_str)
-        from_format = dateFormat(request, from_date_fixed, 'f')
-        to_Format = dateFormat(request, to_date_fixed, 't')
+        from_format = dateFormat(payload, from_date_fixed, 'f')
+        to_Format = dateFormat(payload, to_date_fixed, 't')
         
         csv_query = "SELECT * FROM sensor_data WHERE "
         csv_query += prepareQuery('sensor_id', sensor_id_list)

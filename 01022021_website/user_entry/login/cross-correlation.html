@@ -157,6 +157,13 @@
 
         </div>
 
+        <!-- Sticky Back Button -->
+        <div style="position: sticky; bottom: 32px; width: max-content; z-index: 100; margin-bottom: -45px; transform: translateY(32px);">
+            <button type="button" onclick="window.history.back()" class="btn" style="background-color: white; color: #ff6b35; border: 1px solid #ff6b35; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 20px; font-weight: 500; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#ff6b35'; this.style.color='white';" onmouseout="this.style.backgroundColor='white'; this.style.color='#ff6b35';">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </button>
+        </div>
+
     </main>
     
     {% include 'footer-include.html' %}

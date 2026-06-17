@@ -22,6 +22,9 @@
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/data-visualization-style.css' %}">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -46,98 +49,182 @@
             </div>
         </div>
 
-        <!-- Chart Card -->
-        <div class="chart-card">
-            <div class="chart-card-header">
-                <div class="chart-header-left">
-                    <i class="fas fa-chart-line me-2"></i>
-                    <h3 class="chart-title">Sensor Data Analysis</h3>
-                </div>
-                <div class="chart-header-right">
-                    {% if chart %}
-                    <a href="data:image/png;base64,{{ chart|safe }}" download="LEWS_Sensor_Data.png" class="btn-download">
-                        <i class="fas fa-download me-2"></i>Download Image
-                    </a>
-                    {% endif %}
+        <!-- Download All Feature -->
+        {% if charts %}
+        <div class="d-flex justify-content-end mb-3" style="gap: 15px;">
+            {% if user_type == 'SUPERVISOR' %}
+            <a href="{% url 'download' %}" class="btn-download" style="border: none; cursor: pointer; padding: 10px 20px; font-weight: 600; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;">
+                <i class="fas fa-database me-2"></i>Download Full Dataset
+            </a>
+            {% else %}
+            <a href="javascript:void(0)" class="btn-download" style="border: none; cursor: not-allowed; opacity: 0.5; padding: 10px 20px; font-weight: 600; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;" title="Only Supervisors can download datasets">
+                <i class="fas fa-database me-2"></i>Download Full Dataset
+            </a>
+            {% endif %}
+            
+            {% if user_type == 'USER' %}
+            <button disabled class="btn-download" style="border: none; cursor: not-allowed; opacity: 0.5; padding: 10px 20px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center;" title="Visitors cannot download plots">
+                <i class="fas fa-layer-group me-2"></i>Download All Plots
+            </button>
+            {% else %}
+            <button onclick="downloadAllPlots()" class="btn-download" style="border: none; cursor: pointer; padding: 10px 20px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center;">
+                <i class="fas fa-layer-group me-2"></i>Download All Plots
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Chart Cards Grid -->
+        {% if charts %}
+        <div class="row">
+            {% for chart in charts %}
+            <div class="col-md-6 mb-4">
+                <div class="chart-card shadow-sm" style="border-radius: 12px; background: #ffffff;">
+                    <div class="chart-card-header">
+                        <div class="chart-header-left">
+                            <div style="display: flex; flex-direction: column;">
+                                <div style="display: flex; align-items: center;">
+                                    <i class="fas fa-chart-line me-2 text-white"></i>
+                                    <h3 class="chart-title text-white" style="margin: 0; color: white !important;">{{ chart.title }}</h3>
+                                </div>
+                                {% if chart.node %}
+                                <div style="margin-top: 5px; margin-left: 28px;">
+                                    <span style="background: var(--sel-accent-500, #ff6b35); color: white; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class="fas fa-map-marker-alt me-1" style="font-size: 11px;"></i> Node: {{ chart.node }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="chart-header-right">
+                            {% if user_type == 'USER' %}
+                            <button type="button" disabled style="background: transparent; border: none; outline: none; cursor: not-allowed; opacity: 0.5; color: white; padding: 5px; transition: opacity 0.2s ease;" title="Visitors cannot download plots">
+                                <i class="fas fa-download" style="font-size: 1.2rem;"></i>
+                            </button>
+                            {% else %}
+                            <button type="button" onclick="downloadPlot('chart_{{ chart.id|slugify }}', '{{ chart.id }}_Data')" style="background: transparent; border: none; outline: none; cursor: pointer; color: white; padding: 5px; transition: opacity 0.2s ease;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Download Plot">
+                                <i class="fas fa-download" style="font-size: 1.2rem;"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="chart-card-body p-0">
+                        <div class="chart-container" style="padding: 1rem;">
+                            <div id="chart_{{ chart.id|slugify }}" style="width: 100%; height: 400px;"></div>
+                        </div>
+                    </div>
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            var raw_x = {{ chart.raw_x|safe }};
+                            var raw_y = {{ chart.raw_y|safe }};
+                            var smoothed_y = {{ chart.smoothed_y|safe }};
+                            var color = "{{ chart.color }}";
+                            var duration = "{{ chart.duration }}";
+                            var ylabel = "{{ chart.ylabel }}";
+
+                            var tickFormat = '%d-%b';
+                            var xAxisTitle = 'Time';
+
+                            if (duration === '1') {
+                                tickFormat = '%H:%M';
+                                xAxisTitle = 'Time (Hours)';
+                            } else if (duration === '24') {
+                                tickFormat = '%d-%b';
+                            } else if (duration === '720') {
+                                tickFormat = '%b';
+                            } else if (duration === '8760') {
+                                tickFormat = '%Y';
+                            }
+
+                            var trace1 = {
+                                x: raw_x,
+                                y: raw_y,
+                                mode: 'lines',
+                                name: 'Raw Data',
+                                line: {color: color, width: 1.5},
+                                opacity: 0.3,
+                                hovertemplate: '<b>Date:</b> %{x|%d-%b-%Y}<br><b>Time:</b> %{x|%H:%M}<br><b>' + ylabel + ':</b> %{y}<br><extra>Raw Data</extra>'
+                            };
+
+                            var trace2 = {
+                                x: raw_x,
+                                y: smoothed_y,
+                                mode: 'lines+markers',
+                                name: 'Trend',
+                                line: {color: color, width: 2.5},
+                                marker: {size: 4},
+                                hovertemplate: '<b>Date:</b> %{x|%d-%b-%Y}<br><b>Time:</b> %{x|%H:%M}<br><b>' + ylabel + ':</b> %{y:.2f}<br><extra>Trend</extra>'
+                            };
+
+                            var layout = {
+                                title: '',
+                                margin: {l: 50, r: 20, t: 10, b: 80},
+                                xaxis: {
+                                    title: { text: '<b>' + xAxisTitle + '</b>', font: {size: 12} },
+                                    tickformat: tickFormat,
+                                    tickangle: -45,
+                                    gridcolor: '#e5e5e5'
+                                },
+                                yaxis: {
+                                    title: { text: '<b>' + ylabel + '</b>', font: {size: 12} },
+                                    gridcolor: '#e5e5e5'
+                                },
+                                showlegend: true,
+                                legend: {x: 0, y: 1.1, orientation: 'h'},
+                                plot_bgcolor: 'white',
+                                paper_bgcolor: 'white'
+                            };
+
+                            var config = {responsive: true, displayModeBar: false};
+
+                            Plotly.newPlot('chart_{{ chart.id|slugify }}', [trace1, trace2], layout, config);
+                        });
+                    </script>
                 </div>
             </div>
-
-            <div class="chart-card-body">
-                {% if chart %}
-                <div class="chart-container">
-                    <img src="data:image/png;base64,{{ chart|safe }}" alt="Sensor Data Visualization" class="chart-image">
-                </div>
-                {% else %}
-                <div class="no-data-message">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <p>No data available to display</p>
-                </div>
-                {% endif %}
-            </div>
-
+            {% endfor %}
+        </div>
+        
+        <!-- Global Actions Footer -->
+        <div class="chart-card mt-2 shadow-sm" style="border-radius: 12px; background: #ffffff;">
             <div class="chart-card-footer">
                 <div class="footer-info">
                     <i class="fas fa-info-circle me-2"></i>
                     <span>Generated on {{ current_date|default:"Today" }} at {{ current_time|default:"Now" }}</span>
                 </div>
                 <div class="footer-actions">
+                    <a href="{% url 'cross_correlation' %}" class="btn-footer-action btn-secondary">
+                        <i class="fas fa-project-diagram me-2"></i>Cross-Correlate
+                    </a>
+                    <a href="{% url 'monitoring' %}" class="btn-footer-action btn-secondary">
+                        <i class="fas fa-chart-line me-2"></i>Monitoring Scale
+                    </a>
                     <a href="{% url 'home' %}" class="btn-footer-action btn-secondary">
                         <i class="fas fa-redo me-2"></i>Generate New Visualization
-                    </a>
-                    <a href="{% url 'download' %}" class="btn-footer-action btn-primary">
-                        <i class="fas fa-database me-2"></i>Request Full Dataset
                     </a>
                 </div>
             </div>
         </div>
-
-        <!-- Quick Actions Panel -->
-        <div class="quick-actions-panel">
-            <h4 class="panel-title">
-                <i class="fas fa-bolt me-2"></i>Quick Actions
-            </h4>
-            <div class="actions-grid">
-                <a href="{% url 'home' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-filter"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Change Filters</h5>
-                        <p class="action-description">Modify sensor types and locations</p>
-                    </div>
-                </a>
-
-                <a href="{% url 'fetch_info' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Adjust Time Range</h5>
-                        <p class="action-description">Change date and time parameters</p>
-                    </div>
-                </a>
-
-                <a href="{% url 'download' %}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-file-download"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Download Data</h5>
-                        <p class="action-description">Export raw sensor data</p>
-                    </div>
-                </a>
-
-                <a href="#" class="action-card" onclick="window.print(); return false;">
-                    <div class="action-icon">
-                        <i class="fas fa-print"></i>
-                    </div>
-                    <div class="action-content">
-                        <h5 class="action-title">Print Report</h5>
-                        <p class="action-description">Generate printable version</p>
-                    </div>
-                </a>
+        {% else %}
+        <div class="chart-card shadow-sm" style="border-radius: 12px; background: #ffffff;">
+            <div class="chart-card-body">
+                <div class="no-data-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>No data available to display</p>
+                </div>
             </div>
         </div>
+        {% endif %}
+
+
+
+        <!-- Sticky Back Button -->
+        <div style="position: sticky; bottom: 32px; width: max-content; z-index: 100; margin-bottom: -45px; transform: translateY(32px);">
+            <button type="button" onclick="window.history.back()" class="btn-action btn-primary" style="box-shadow: 0 6px 16px rgba(255, 122, 61, 0.25); border: none;">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </button>
+        </div>
+
     </div>
     </main>
 
@@ -199,5 +286,35 @@
 
     <!-- Interactions JS -->
     <script src="{% static 'js/interactions.js' %}"></script>
+
+    <script>
+        function downloadPlot(divId, filename) {
+            Plotly.downloadImage(divId, {format: 'png', width: 800, height: 600, filename: filename});
+        }
+
+        function downloadAllPlots() {
+            const downloadBtns = document.querySelectorAll('.chart-header-right .btn-download');
+            if (downloadBtns.length === 0) return;
+            
+            // Show a small alert or change button text to indicate action
+            const allBtn = document.querySelector('button[onclick="downloadAllPlots()"]');
+            const originalText = allBtn.innerHTML;
+            allBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Downloading...';
+            allBtn.disabled = true;
+            
+            downloadBtns.forEach((btn, index) => {
+                setTimeout(() => {
+                    btn.click();
+                    // Reset button after the last download
+                    if (index === downloadBtns.length - 1) {
+                        setTimeout(() => {
+                            allBtn.innerHTML = originalText;
+                            allBtn.disabled = false;
+                        }, 1000);
+                    }
+                }, index * 400); // 400ms delay between each download
+            });
+        }
+    </script>
 </body>
 </html>

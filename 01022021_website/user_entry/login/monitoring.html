@@ -1,0 +1,294 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Landslide Monitoring Scale - LEWS Dashboard</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}?v=3.2">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <link rel="stylesheet" href="{% static 'css/monitoring-dashboard.css' %}">
+
+<body>
+    <!-- Navigation -->
+    {% include 'navbar-include.html' %}
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <div class="container">
+            <div class="dashboard-wrapper">
+                <!-- Background Grid & Effects -->
+                <div class="dashboard-bg-grid"></div>
+                <div class="dashboard-mesh"></div>
+
+                <div class="dashboard-content">
+                    <!-- Live Header -->
+                    <div class="dashboard-header">
+                        <div class="live-badge">
+                            <div class="pulse-dot"></div>
+                            LIVE MONITORING
+                        </div>
+                        <h2 class="fw-bold mb-0 text-white" style="font-size: 1.8rem; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.4);">Landslide Risk Analytics</h2>
+                        <div class="last-updated" id="last-updated-time">
+                            <i class="far fa-clock"></i> Updated: Just now
+                        </div>
+                    </div>
+
+                    <!-- Circular Gauge Section -->
+                    <div class="meter-container">
+                        <!-- Radar Beacon -->
+                        <div class="radar-beacon" id="radar-beacon">
+                            <div class="beacon-ring" id="beacon-ring-1"></div>
+                            <div class="beacon-ring" id="beacon-ring-2" style="animation-delay: 1s;"></div>
+                            <i class="fas fa-satellite-dish"></i>
+                        </div>
+
+                        <!-- SVG Gauge -->
+                        <svg class="gauge-svg" viewBox="0 0 400 200">
+                            <!-- Definitions for Gradients -->
+                            <defs>
+                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#4ade80" />
+                                    <stop offset="33%" stop-color="#facc15" />
+                                    <stop offset="66%" stop-color="#fb923c" />
+                                    <stop offset="100%" stop-color="#ef4444" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- Background Arc -->
+                            <path class="gauge-bg" d="M 20 200 A 180 180 0 0 1 380 200" />
+                            
+                            <!-- Filled Arc -->
+                            <path class="gauge-fill" id="gauge-fill" d="M 20 200 A 180 180 0 0 1 380 200" stroke="url(#gaugeGradient)" />
+                            
+                            <!-- Needle -->
+                            <g class="gauge-needle" id="gauge-needle">
+                                <path class="needle-path" d="M 195 200 L 200 40 L 205 200 Z" />
+                                <circle class="needle-center" cx="200" cy="200" r="10" />
+                            </g>
+                        </svg>
+
+                        <!-- Labels -->
+                        <div class="gauge-labels">
+                            <span class="g-label safe">0 (Safe)</span>
+                            <span class="g-label danger">100 (Critical)</span>
+                        </div>
+
+                        <!-- Score Display -->
+                        <div class="meter-score-display">
+                            <div class="score-value" id="score-value">0</div>
+                            <div class="score-status" id="score-status">CALCULATING...</div>
+                        </div>
+                    </div>
+
+                    <!-- Glassmorphism Cards Grid -->
+                    <div class="dashboard-cards">
+                        <!-- Green Card -->
+                        <div class="dash-card card-green" id="card-green">
+                            <div class="card-header">
+                                <i class="fas fa-shield-alt card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">GREEN ZONE</span>
+                                    <span class="card-subtitle">Normal / Safe Status</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> No significant movement detected</li>
+                                <li><i class="fas fa-play"></i> Conditions remain perfectly stable</li>
+                                <li><i class="fas fa-play"></i> Routine background monitoring</li>
+                            </ul>
+                        </div>
+
+                        <!-- Yellow Card -->
+                        <div class="dash-card card-yellow" id="card-yellow">
+                            <div class="card-header">
+                                <i class="fas fa-exclamation-triangle card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">YELLOW ZONE</span>
+                                    <span class="card-subtitle">Caution Required</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> Minor ground movement detected</li>
+                                <li><i class="fas fa-play"></i> Possible risk development</li>
+                                <li><i class="fas fa-play"></i> Heightened alertness level</li>
+                            </ul>
+                        </div>
+
+                        <!-- Orange Card -->
+                        <div class="dash-card card-orange" id="card-orange">
+                            <div class="card-header">
+                                <i class="fas fa-engine-warning card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">ORANGE ZONE</span>
+                                    <span class="card-subtitle">Active Warning</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> Significant movement recorded</li>
+                                <li><i class="fas fa-play"></i> High probability of landslide</li>
+                                <li><i class="fas fa-play"></i> Prepare emergency protocols</li>
+                            </ul>
+                        </div>
+
+                        <!-- Red Card -->
+                        <div class="dash-card card-red" id="card-red">
+                            <div class="card-header">
+                                <i class="fas fa-radiation-alt card-icon"></i>
+                                <div class="card-title-group">
+                                    <span class="card-title">RED ZONE</span>
+                                    <span class="card-subtitle">Critical Danger</span>
+                                </div>
+                            </div>
+                            <ul class="card-list">
+                                <li><i class="fas fa-play"></i> Severe movement in progress</li>
+                                <li><i class="fas fa-play"></i> Imminent disaster risk</li>
+                                <li><i class="fas fa-play"></i> Immediate evacuation required</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    {% include 'footer-include.html' %}
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{% static 'js/nav.js' %}"></script>
+    <script src="{% static 'js/interactions.js' %}"></script>
+
+    <script type="module">
+        import { getRiskScore, STATUS_RANGES } from "{% static 'js/riskEngine.js' %}";
+
+        function updateTimestamp() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            document.getElementById('last-updated-time').innerHTML = `<i class="far fa-clock"></i> Updated: ${dateStr}, ${timeStr}`;
+        }
+
+        function updateUIWithRiskScore(prediction) {
+            const { score } = prediction;
+            
+            // Constrain score between 0 and 100
+            const displayScore = Math.max(0, Math.min(100, score));
+            
+            let statusText = "SAFE";
+            let color = "#4ade80"; // Green
+            let activeCardId = "card-green";
+
+            if (displayScore >= STATUS_RANGES.GREEN[0] && displayScore <= STATUS_RANGES.GREEN[1]) {
+                statusText = "SAFE ZONE";
+                color = "#4ade80";
+                activeCardId = "card-green";
+            } else if (displayScore >= STATUS_RANGES.YELLOW[0] && displayScore <= STATUS_RANGES.YELLOW[1]) {
+                statusText = "CAUTION";
+                color = "#facc15";
+                activeCardId = "card-yellow";
+            } else if (displayScore >= STATUS_RANGES.ORANGE[0] && displayScore <= STATUS_RANGES.ORANGE[1]) {
+                statusText = "WARNING";
+                color = "#fb923c";
+                activeCardId = "card-orange";
+            } else if (displayScore >= STATUS_RANGES.RED[0] && displayScore <= STATUS_RANGES.RED[1]) {
+                statusText = "CRITICAL DANGER";
+                color = "#ef4444";
+                activeCardId = "card-red";
+            }
+
+            // Update Score Values
+            const scoreValueEl = document.getElementById('score-value');
+            const scoreStatusEl = document.getElementById('score-status');
+            
+            // Number counter animation
+            let currentDisplay = 0;
+            const duration = 1500;
+            const steps = 60;
+            const stepTime = duration / steps;
+            const increment = displayScore / steps;
+            
+            const timer = setInterval(() => {
+                currentDisplay += increment;
+                if (currentDisplay >= displayScore) {
+                    currentDisplay = displayScore;
+                    clearInterval(timer);
+                }
+                scoreValueEl.innerText = Math.round(currentDisplay);
+            }, stepTime);
+
+            scoreStatusEl.innerText = statusText;
+            scoreValueEl.style.color = color;
+            scoreStatusEl.style.color = color;
+
+            // Gauge Fill Animation
+            const gaugeFill = document.getElementById('gauge-fill');
+            const circumference = 565.48; // PI * R (180)
+            const offset = circumference - ((displayScore / 100) * circumference);
+            
+            // Delay slightly for effect
+            setTimeout(() => {
+                gaugeFill.style.strokeDashoffset = offset;
+            }, 100);
+
+            // Needle Rotation Animation
+            const gaugeNeedle = document.getElementById('gauge-needle');
+            // Range is from -90deg (0) to 90deg (100)
+            const rotation = -90 + ((displayScore / 100) * 180);
+            
+            setTimeout(() => {
+                gaugeNeedle.style.transform = `rotate(${rotation}deg)`;
+            }, 100);
+
+            // Radar Beacon Update
+            const radarBeacon = document.getElementById('radar-beacon');
+            radarBeacon.style.background = `${color}33`; // 20% opacity
+            const beaconRings = document.querySelectorAll('.beacon-ring');
+            beaconRings.forEach(ring => {
+                ring.style.borderColor = color;
+            });
+
+            // Card Highlight Logic
+            document.querySelectorAll('.dash-card').forEach(card => {
+                card.classList.remove('active-card');
+                card.style.boxShadow = 'none';
+            });
+
+            const activeCard = document.getElementById(activeCardId);
+            if (activeCard) {
+                activeCard.classList.add('active-card');
+                activeCard.style.boxShadow = `0 15px 35px ${color}40`; // 25% opacity colored shadow
+            }
+        }
+        
+        // Initialize
+        updateTimestamp();
+        // Update timestamp every second
+        setInterval(updateTimestamp, 1000);
+        
+        // Let the page render, then trigger animation
+        setTimeout(() => {
+            const prediction = getRiskScore();
+            updateUIWithRiskScore(prediction);
+        }, 300);
+    </script>
+</body>
+</html>

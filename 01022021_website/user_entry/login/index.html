@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing-style.css' %}?v=3.1">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
 </head>
 
@@ -312,37 +312,6 @@
                                 To provide accurate, timely, and actionable early warnings for landslide hazards, enabling communities and authorities to take preventive measures and save lives through the power of continuous monitoring and advanced sensor technology.
                             </p>
                         </div>
-
-                        <!-- Partners -->
-                        <div class="partners-grid">
-                            <div class="partner-card">
-                                <div class="partner-icon">
-                                    <i class="fas fa-building-columns"></i>
-                                </div>
-                                <div>
-                                    <div class="partner-name">CSIR-CBRI</div>
-                                    <div class="partner-role">Research Partner</div>
-                                </div>
-                            </div>
-                            <div class="partner-card">
-                                <div class="partner-icon">
-                                    <i class="fas fa-graduation-cap"></i>
-                                </div>
-                                <div>
-                                    <div class="partner-name">IIT Roorkee</div>
-                                    <div class="partner-role">Technical Partner</div>
-                                </div>
-                            </div>
-                            <div class="partner-card">
-                                <div class="partner-icon">
-                                    <i class="fas fa-leaf"></i>
-                                </div>
-                                <div>
-                                    <div class="partner-name">NMHS</div>
-                                    <div class="partner-role">Funding Agency</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- About Visual -->
@@ -372,6 +341,56 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Funding Organizations Section -->
+                <div class="funding-section-container mt-5 pt-5">
+                    <div class="funding-section-header mb-5">
+                        <div class="funding-header-line"></div>
+                        <h3 class="funding-header-title">FUNDING ORGANIZATIONS</h3>
+                    </div>
+                    
+                    <div class="funding-scalable-grid">
+                        <!-- Card 1 -->
+                        <div class="funding-org-card animate-fade-in-up">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/nmhs.png' %}" alt="NMHS Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-leaf text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-org-name">NMHS</div>
+                            <div class="funding-org-role">Funding Organization</div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="funding-org-card animate-fade-in-up" style="animation-delay: 0.1s;">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/drdo.png' %}" alt="DRDO Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-shield-alt text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-org-name">DRDO</div>
+                            <div class="funding-org-role">Funding Organization</div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="funding-org-card animate-fade-in-up" style="animation-delay: 0.2s;">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/kdisc.png' %}" alt="K-DISC Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-lightbulb text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-org-name">K-DISC</div>
+                            <div class="funding-org-role">Funding Organization</div>
+                        </div>
+
+                        <!-- Card 4 -->
+                        <div class="funding-org-card animate-fade-in-up" style="animation-delay: 0.3s;">
+                            <div class="funding-org-icon">
+                                <img src="{% static 'images/logos/isro.svg' %}" alt="ISRO Logo" class="img-fluid" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                <i class="fas fa-satellite text-primary fs-3 fallback-icon" style="display:none;"></i>
+                            </div>
+                            <div class="funding-org-name">ISRO</div>
+                            <div class="funding-org-role">Funding Organization</div>
                         </div>
                     </div>
                 </div>
@@ -409,7 +428,7 @@
             <div class="footer-main">
                 <div class="row g-4">
                     <!-- Brand Column -->
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-5 col-md-12">
                         <div class="footer-brand">
                             <div class="footer-brand-logo">
                                 <div class="footer-logo-icon">
@@ -424,7 +443,7 @@
                     </div>
 
                     <!-- Quick Links -->
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <h4 class="footer-heading">Quick Links</h4>
                         <ul class="footer-links">
                             <li>
@@ -454,29 +473,8 @@
                         </ul>
                     </div>
 
-                    <!-- Download Apps -->
-                    <div class="col-lg-3 col-md-6">
-                        <h4 class="footer-heading">Mobile Apps</h4>
-                        <div class="app-buttons">
-                            <a href="{% static 'App.apk' %}" class="btn-app-download">
-                                <i class="fab fa-android"></i>
-                                <div class="app-download-text">
-                                    <span class="app-download-label">Download</span>
-                                    <span class="app-download-name">LEWS App</span>
-                                </div>
-                            </a>
-                            <a href="{% static 'IIT_inside.apk' %}" class="btn-app-download">
-                                <i class="fas fa-mobile-screen-button"></i>
-                                <div class="app-download-text">
-                                    <span class="app-download-label">Download</span>
-                                    <span class="app-download-name">IIT Inside App</span>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-
                     <!-- Partners -->
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-4 col-md-6">
                         <h4 class="footer-heading">Our Partners</h4>
                         <div class="footer-partners">
                             <div class="footer-partner">
@@ -486,10 +484,6 @@
                             <div class="footer-partner">
                                 <i class="fas fa-graduation-cap"></i>
                                 <span>IIT Roorkee</span>
-                            </div>
-                            <div class="footer-partner">
-                                <i class="fas fa-leaf"></i>
-                                <span>NMHS</span>
                             </div>
                         </div>
                     </div>
@@ -501,10 +495,6 @@
                 <div class="footer-bottom-content">
                     <p class="footer-copyright">
                         &copy; 2024 CSIR-CBRI & IIT Roorkee. All rights reserved.
-                    </p>
-                    <p class="footer-funded">
-                        <i class="fas fa-award"></i>
-                        Funded by National Mission on Himalayan Studies (NMHS)
                     </p>
                 </div>
             </div>
@@ -592,7 +582,7 @@
             });
         }, observerOptions);
 
-        document.querySelectorAll('.feature-card, .partner-card, .about-mission').forEach(el => {
+        document.querySelectorAll('.feature-card, .partner-card, .about-mission, .funding-section-header, .funding-org-card').forEach(el => {
             el.style.opacity = '0';
             observer.observe(el);
         });

@@ -1,0 +1,259 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Meet the Landslide Early Warning System (LEWS) Team">
+    <title>Our Team - LEWS | Landslide Early Warning System</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&family=Quicksand:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/about.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    
+    <style>
+        .back-button-container {
+            padding: 2rem 0 0 0;
+            margin-bottom: -2rem;
+        }
+        .team-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        /* Horizontal Cards Styling */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 2rem;
+        }
+        .team-card {
+            display: flex !important;
+            align-items: center !important;
+            text-align: left !important;
+            padding: 1.5rem !important;
+            gap: 1.5rem !important;
+            background: rgba(234, 244, 255, 0.6) !important;
+            border: 1px solid rgba(173, 216, 255, 0.8) !important;
+            box-shadow: 0 4px 12px rgba(100, 150, 200, 0.1) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        .team-card:hover {
+            border-color: #FF7A3D !important;
+            background: #ffffff !important;
+            box-shadow: 0 8px 25px rgba(255, 122, 61, 0.25) !important;
+            transform: translateY(-4px) scale(1.02) !important;
+        }
+        .team-avatar {
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+            width: 100px !important;
+            height: 100px !important;
+        }
+        .team-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .team-info h4 {
+            margin-bottom: 0.25rem !important;
+        }
+        .team-info .team-role {
+            margin-bottom: 0.5rem !important;
+        }
+        .team-info .team-bio {
+            margin: 0 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .team-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    {% include 'navbar-include.html' %}
+
+    <main id="main-content">
+        <!-- Animated Background -->
+        <div class="selection-background">
+            <div class="bg-pattern"></div>
+        </div>
+
+        <div class="container back-button-container" style="position: relative; z-index: 20;">
+            <button onclick="window.history.back()" class="btn btn-outline-primary" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+
+        <!-- Team Section -->
+        <section style="padding-top: 2rem; position: relative; z-index: 10;">
+            <div class="container selection-container">
+              <div class="selection-card">
+                <!-- Heading Section themed like sensor-selection -->
+                <div class="container text-center"
+                    style="margin-top: 0; margin-bottom: 3rem; position: relative; z-index: 10;">
+                    <h2 class="fw-bold mb-0"
+                        style="color: #0f1623; font-family: 'Poppins', sans-serif; font-size: 2.25rem; display: flex; align-items: center; justify-content: center; gap: 20px;">
+                        <div style="display: flex; align-items: center;">
+                            <span
+                                style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
+                            <span
+                                style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-left: 8px;"></span>
+                        </div>
+                        Our Team
+                        <div style="display: flex; align-items: center;">
+                            <span
+                                style="width: 8px; height: 8px; background-color: #ff6b35; transform: rotate(45deg); display: inline-block; margin-right: 8px;"></span>
+                            <span
+                                style="width: 40px; height: 2px; background-color: #ff6b35; display: inline-block; border-radius: 2px;"></span>
+                        </div>
+                    </h2>
+                    <p class="section-subtitle" style="margin-top: 15px;">Expert researchers and engineers dedicated to saving lives</p>
+                </div>
+                
+                <div class="team-grid">
+                
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/principal.jpg' %}" alt="Principal Investigator">
+                    </div>
+                    <div class="team-info">
+                        <h4>Dr. Principal Investigator</h4>
+                        <p class="team-role">Project Lead - CSIR-CBRI</p>
+                        <p class="team-bio">Leading geotechnical expert with 25+ years in disaster mitigation</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/coinvestigator.jpg' %}" alt="Co-Investigator">
+                    </div>
+                    <div class="team-info">
+                        <h4>Prof. Co-Investigator</h4>
+                        <p class="team-role">Technical Lead - IIT-Roorkee</p>
+                        <p class="team-bio">Specialist in computational modeling and sensor networks</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/vijay.jpg' %}" alt="Vijay">
+                    </div>
+                    <div class="team-info">
+                        <h4>Vijay</h4>
+                        <p class="team-role">Geotechnical Research Lead</p>
+                        <p class="team-bio">Expert in landslide monitoring and disaster mitigation systems.</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/suhani.jpg' %}?v=3" alt="Suhani">
+                    </div>
+                    <div class="team-info">
+                        <h4>Suhani</h4>
+                        <p class="team-role">MERN Stack Developer</p>
+                        <p class="team-bio">Software Engineer</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/arushi.jpg' %}" alt="Arushi">
+                    </div>
+                    <div class="team-info">
+                        <h4>Arushi</h4>
+                        <p class="team-role">IoT Specialist</p>
+                        <p class="team-bio">Handles sensor integration and real-time monitoring systems.</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/rahul.jpg' %}" alt="Rahul">
+                    </div>
+                    <div class="team-info">
+                        <h4>Rahul</h4>
+                        <p class="team-role">Frontend Developer</p>
+                        <p class="team-bio">Designs interactive dashboards and visualization interfaces.</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/priyansh.jpg' %}" alt="Priyansh">
+                    </div>
+                    <div class="team-info">
+                        <h4>Priyansh</h4>
+                        <p class="team-role">Backend Developer</p>
+                        <p class="team-bio">Develops APIs and manages real-time data flow systems.</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/ananya.jpg' %}" alt="Ananya">
+                    </div>
+                    <div class="team-info">
+                        <h4>Ananya</h4>
+                        <p class="team-role">Data Analyst</p>
+                        <p class="team-bio">Analyzes sensor data and generates disaster insights.</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/kunal.jpg' %}" alt="Kunal">
+                    </div>
+                    <div class="team-info">
+                        <h4>Kunal</h4>
+                        <p class="team-role">Cloud Engineer</p>
+                        <p class="team-bio">Manages deployment infrastructure and cloud services.</p>
+                    </div>
+                </div>
+
+                <div class="team-card">
+                    <div class="team-avatar">
+                        <img src="{% static 'images/team/neha.jpg' %}" alt="Neha">
+                    </div>
+                    <div class="team-info">
+                        <h4>Neha</h4>
+                        <p class="team-role">UI/UX Designer</p>
+                        <p class="team-bio">Creates intuitive and user-friendly interfaces.</p>
+                    </div>
+                </div>
+
+            </div>
+              </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    {% include 'footer-include.html' %}
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{% static 'js/nav.js' %}"></script>
+    <script src="{% static 'js/interactions.js' %}"></script>
+</body>
+</html>

@@ -87,33 +87,109 @@ def logout(request):
 #23.10.2020
 
 def f1(email):
-  print('i have called')
-  query="select distinct(sensor_type) from sensor_info"   
-  cursor.execute(query)
-  node_records = cursor.fetchall()
-  sensor="<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'><input class='custom-control-input' id='allsen' name='st' type='checkbox' value='all'>" \
-         "<label class='cursor-pointer font-italic d-block custom-control-label' for='allsen'>All</label></div></li>"
-  count=1
-  for row in node_records:
-    sensor=sensor+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
-    for col in row:
-      sensor=sensor+"<input class='custom-control-input' id='"+col+"' name='st' type='checkbox' value='"+col+"'>" \
-            "<label class='cursor-pointer font-italic d-block custom-control-label' for='"+col+"'>"+col.upper()+"</label></div></li>"
-  count=count+1  
-
-
-  query="select node_id,location,name from node where node_id in (select node_id from node,u_status where node.location=u_status.location and email_id='"+email+"')"   
-  cursor.execute(query)
-  node_records = cursor.fetchall()
-  location="<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'><input class='custom-control-input' id='allloc' name='loc' type='checkbox' value='all'>" \
-         "<label class='cursor-pointer font-italic d-block custom-control-label' for='allloc'>All</label></div></li>"
-  count=1
-  for row in node_records:
-    location=location+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
-    location=location+"<input class='custom-control-input' id='"+row[0]+"' name='loc' type='checkbox' value='"+row[0]+"'>" \
-            "<label class='cursor-pointer font-italic d-block custom-control-label' for='"+row[0]+"'>"+row[1].upper()+'@'+row[2].upper()+"</label></div></li>"
-    count=count+1
-  return sensor,location
+    print('i have called')
+    
+    # Get user's tenant_id
+    cursor.execute("SELECT tenant_id FROM user_list WHERE email_id=%s", (email,))
+    tenant_result = cursor.fetchone()
+    tenant_id = tenant_result[0] if tenant_result else None
+    
+    # 1. Generate Sensor Checkboxes
+    query = "select distinct(sensor_type) from sensor_info order by sensor_type"   
+    cursor.execute(query)
+    node_records = cursor.fetchall()
+    
+    sensor = ""
+    for row in node_records:
+        for col in row:
+            sensor_name = col.lower()
+            icon = 'fa-microchip'
+            if sensor_name == 'rain guage': icon = 'fa-cloud-rain'
+            elif sensor_name == 'pitch': icon = 'fa-ruler-combined'
+            elif sensor_name == 'pressure': icon = 'fa-tachometer-alt'
+            elif sensor_name == 'voltage': icon = 'fa-bolt'
+            elif sensor_name == 'rainfall': icon = 'fa-cloud-showers-heavy'
+            elif sensor_name == 'vols': icon = 'fa-heartbeat'
+            elif sensor_name == 'roll': icon = 'fa-sync-alt'
+            elif sensor_name == 'moisture': icon = 'fa-tint'
+            
+            sensor += (
+                f"<li><label class='styled-card' for='{col}'>"
+                f"<div class='styled-card-content'>"
+                f"<input class='styled-checkbox' id='{col}' name='st' type='checkbox' value='{col}'>"
+                f"<i class='fas {icon} styled-icon'></i>"
+                f"<span class='styled-text'>{col.upper()}</span>"
+                f"</div>"
+                f"</label></li>"
+            )
+            
+    # Always prepend 'ALL' to the beginning of Sensor Types
+    sensor = (
+        "<li><label class='styled-card' for='allsen'>"
+        "<div class='styled-card-content'>"
+        "<input class='styled-checkbox' id='allsen' name='st' type='checkbox' value='all'>"
+        "<i class='fas fa-layer-group styled-icon'></i>"
+        "<span class='styled-text'>ALL</span>"
+        "</div>"
+        "</label></li>"
+    ) + sensor
+            
+    # 2. Generate Location Checkboxes
+    if tenant_id:
+        query = "select node_id,location,name from node where tenant_id=%s"
+        cursor.execute(query, (tenant_id,))
+    else:
+        query = "select node_id,location,name from node where node_id in (select node_id from node,u_status where node.location=u_status.location and email_id=%s)"
+        cursor.execute(query, (email,))
+    node_records = cursor.fetchall()
+    
+    import re
+    def sort_node_key(row):
+        name = row[2]
+        match = re.search(r'\d+', name)
+        return int(match.group()) if match else 9999
+        
+    node_records.sort(key=sort_node_key)
+    
+    location = ""
+    state_name_for_map = "default" # System fallback
+    if tenant_id:
+        cursor.execute("SELECT tenant_name, remarks FROM tenant WHERE tenant_id=%s", (tenant_id,))
+        t_res = cursor.fetchone()
+        if t_res:
+            t_name, t_rem = t_res
+            if t_rem and " for " in t_rem and " Landslide" in t_rem:
+                state_name_for_map = t_rem.split(" for ")[1].split(" Landslide")[0].lower()
+            elif t_name:
+                state_name_for_map = t_name.lower().replace(" ", "_")
+            
+    for row in node_records:
+        node_id, loc_name, name = row[0], row[1], row[2]
+        location += (
+            f"<li><label class='styled-card' for='{node_id}'>"
+            f"<div class='styled-card-content'>"
+            f"<input class='styled-checkbox' id='{node_id}' name='loc' type='checkbox' value='{node_id}'>"
+            f"<i class='fas fa-map-marker-alt styled-icon'></i>"
+            f"<span class='styled-text'>{loc_name.upper()}@{name.upper()}</span>"
+            f"</div>"
+            f"<i class='fas fa-chevron-right styled-arrow'></i>"
+            f"</label></li>"
+        )
+        
+    # Always prepend 'ALL' to the beginning of Locations, along with the state data
+    location = (
+        f"<input type='hidden' id='user_state_data' value='{state_name_for_map}'>"
+        "<li><label class='styled-card' for='allloc'>"
+        "<div class='styled-card-content'>"
+        "<input class='styled-checkbox' id='allloc' name='loc' type='checkbox' value='all'>"
+        "<i class='fas fa-th-large styled-icon'></i>"
+        "<span class='styled-text'>ALL</span>"
+        "</div>"
+        "<i class='fas fa-chevron-right styled-arrow'></i>"
+        "</label></li>"
+    ) + location
+        
+    return sensor, location
 
 def prepareQuery(word,data):
   content=word+' in ('
@@ -158,17 +234,23 @@ def insert(request):
   
   
 
-@no_cache
 def fetch_info(request):
-  num1=[]
-  num2=[]
-  ty=request.POST['val']
-  num1 = request.POST.getlist('st')
-  num2 = request.POST.getlist('loc')
+  if request.method == 'POST':
+    request.session['fetch_info_payload'] = {
+        'val': request.POST.get('val', ''),
+        'st': request.POST.getlist('st'),
+        'loc': request.POST.getlist('loc')
+    }
+    return redirect('fetch_info')
+
+  session_data = request.session.get('fetch_info_payload', {})
+  ty = session_data.get('val', '')
+  num1 = session_data.get('st', [])
+  num2 = session_data.get('loc', [])
 
   if len(num1)==0 or len(num2)==0:
     sensor,location=f1(name)
-    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
+    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name': actual_username if 'actual_username' in globals() else name, 'user_email': name,'message_sp':"<font color='RED'>PLEASE SELECT THE VALUES </font>"})
 
   # Get user's tenant_id from user_list table
   tenant_query = "SELECT tenant_id FROM user_list WHERE email_id = %s"
@@ -176,16 +258,16 @@ def fetch_info(request):
   tenant_result = cursor.fetchone()
   tenant_id = tenant_result[0] if tenant_result else None
 
-  # Get user's allowed node_ids based on u_status table (location-based access control)
-  allowed_nodes_query = """
-    SELECT DISTINCT node.node_id FROM node
-    INNER JOIN u_status ON node.location = u_status.location
-    WHERE u_status.email_id = %s
-  """
+  # Get user's allowed node_ids
   if tenant_id:
-    allowed_nodes_query += " AND node.tenant_id = %s"
-    cursor.execute(allowed_nodes_query, (name, tenant_id))
+    allowed_nodes_query = "SELECT DISTINCT node_id FROM node WHERE tenant_id = %s"
+    cursor.execute(allowed_nodes_query, (tenant_id,))
   else:
+    allowed_nodes_query = """
+      SELECT DISTINCT node.node_id FROM node
+      INNER JOIN u_status ON node.location = u_status.location
+      WHERE u_status.email_id = %s
+    """
     cursor.execute(allowed_nodes_query, (name,))
   allowed_nodes_result = cursor.fetchall()
   allowed_node_ids = [row[0] for row in allowed_nodes_result]
@@ -200,7 +282,7 @@ def fetch_info(request):
   # If no valid nodes after filtering, show error
   if len(node_id) == 0:
     sensor,location=f1(name)
-    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name':name,'message_sp':"<font color='RED'>NO VALID LOCATIONS SELECTED </font>"})
+    return render(request,'sensor-selection.html',{'sensor':sensor,'location':location,'user_name': actual_username if 'actual_username' in globals() else name, 'user_email': name,'message_sp':"<font color='RED'>NO VALID LOCATIONS SELECTED </font>"})
 
   # Build query for sensors filtered by tenant_id and allowed node_ids
   query = "SELECT DISTINCT sensor_id FROM sensor_info WHERE "
@@ -213,39 +295,61 @@ def fetch_info(request):
     params.append(tenant_id)
 
   # Filter by sensor type if not 'all'
-  if len(num1) != 0 and 'all' not in num1:
+  if len(num1) != 0 and 'all' not in [str(x).strip().lower() for x in num1]:
     type_placeholders = ','.join(['%s'] * len(num1))
-    conditions.append("sensor_type IN (" + type_placeholders + ")")
-    params.extend(num1)
+    conditions.append("LOWER(TRIM(sensor_type)) IN (" + type_placeholders + ")")
+    params.extend([str(item).strip().lower() for item in num1])
 
   # Filter by allowed node_ids
   if len(node_id) != 0:
     node_placeholders = ','.join(['%s'] * len(node_id))
-    conditions.append("node_id IN (" + node_placeholders + ")")
-    params.extend(node_id)
+    conditions.append("LOWER(TRIM(node_id)) IN (" + node_placeholders + ")")
+    params.extend([str(item).strip().lower() for item in node_id])
 
   query += " AND ".join(conditions)
   cursor.execute(query, params)
   node_records = cursor.fetchall()
+
 
   sensor_id=[]
   for row in node_records:
     for col in row:
       sensor_id.append(col)
 
+  import re
+  def sort_sensor_key(s):
+    s_upper = s.upper()
+    n_match = re.search(r'_N(\d+)', s_upper)
+    n_val = int(n_match.group(1)) if n_match else 9999
+    
+    type_order = 99
+    if 'MS1' in s_upper: type_order = 1
+    elif 'PH1' in s_upper: type_order = 2
+    elif 'PRI' in s_upper or 'PR1' in s_upper: type_order = 3
+    elif 'ROI' in s_upper or 'RO1' in s_upper: type_order = 4
+    
+    return (n_val, type_order, s_upper)
+
+  sensor_id.sort(key=sort_sensor_key)
+
   sensor_id_list=""
   count=1
   for row in sensor_id:
-    sensor_id_list=sensor_id_list+"<li class='list-group-item rounded-0'><div class='custom-control custom-checkbox'>"
-    sensor_id_list=sensor_id_list+"<input class='custom-control-input' id='"+row+"' name='sensor_list_id' type='checkbox' value='"+row+"'>"
-    sensor_id_list=sensor_id_list+"<label class='cursor-pointer font-italic d-block custom-control-label' for='"+row+"'>"+row.upper()+"</label></div></li>"
+    sensor_id_list += (
+        f"<li><label class='styled-card' for='{row}'>"
+        f"<div class='styled-card-content'>"
+        f"<input class='styled-checkbox' id='{row}' name='sensor_list_id' type='checkbox' value='{row}'>"
+        f"<span class='styled-text'>{row.upper()}</span>"
+        f"</div>"
+        f"</label></li>"
+    )
   if ty=="app":
     return render(request,'inter.html',{'sensor_id':sensor_id_list,'hidden_value':'app'})
 
   return render(request,'sensor-data-selection.html',{
     'sensor_id':sensor_id_list,
     'hidden_value':'browser',
-    'user_name': name if name else 'User'
+    'user_name': actual_username if 'actual_username' in globals() else (name if name else 'User'), 'user_email': name
   })
 
 
@@ -259,7 +363,33 @@ def login_form(request):
   return render(request,'login.html')
 
 def register_form(request):
-  return render(request,'register.html')
+  try:
+      connection.commit()
+  except Exception:
+      pass
+  cursor.execute("SELECT tenant_id, tenant_name, remarks FROM tenant WHERE is_active=true ORDER BY tenant_id")
+  tenants = cursor.fetchall()
+  
+  formatted_tenants = []
+  for t in tenants:
+      t_id = t[0]
+      name = t[1]
+      remark = t[2] if t[2] else ""
+      
+      if t_id == 1:
+          display_name = "Default"
+      elif " for " in remark and " Landslide" in remark:
+          state = remark.split(" for ")[1].split(" Landslide")[0]
+          display_name = f"{state} ({name})"
+      else:
+          display_name = f"{name}"
+          
+      formatted_tenants.append({
+          'id': t_id,
+          'name': display_name
+      })
+      
+  return render(request, 'register.html', {'tenants': formatted_tenants})
 
 
 
@@ -267,32 +397,53 @@ def register_form(request):
 count_app=100
 
 name=''
+current_user_type='USER'
 def login_page(request):
   global count_app
+  global actual_username
   global name
   global check
+  global connection, cursor
+  global current_user_type
 
   # Handle GET request - show login form
   if request.method != 'POST':
-    return render(request, 'regis.html')
+    return redirect('signin')
 
   # Handle POST request - process login
   print(type(request.POST))
-  name=request.POST['t11']
-  print(name)
+  identifier=request.POST['t11']
+  print(identifier)
   password=request.POST['t12']
   print(password)
   status=request.POST['web']
   if request.POST.__contains__('count_app'):
    count_app=request.POST['count_app']
 
-  query="select uname,email_id,user_type from user_list where(email_id='"+name+"' and upassword='"+password+"' and status='accepted')"
+  query = "SELECT uname, email_id, user_type, tenant_id FROM user_list WHERE (LOWER(email_id)=LOWER(%s) OR LOWER(uname)=LOWER(%s)) AND upassword=%s AND status='accepted'"
   try:
-    cursor.execute(query)
+    connection.commit()
+    cursor.execute(query, [identifier, identifier, password])
     result=cursor.fetchall()
     print(len(result))
     if len(result) != 0:
+      tenant_id = result[0][3]
+      if tenant_id:
+        cursor.execute("SELECT is_active FROM tenant WHERE tenant_id=%s", [tenant_id])
+        tenant_res = cursor.fetchone()
+        if tenant_res and not tenant_res[0]:
+          if status == "app":
+            from django.http import JsonResponse
+            return JsonResponse({"message": "Tenant is not activated yet. Please contact the owner."}, status=403)
+          else:
+            return render(request,'login.html',{'message':"Tenant is not activated yet. Please contact the owner."})
+
       check="credit"
+      # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
+      name = result[0][1]
+      actual_username = result[0][0] or result[0][1]
+      current_user_type = result[0][2] or "USER"
+      
       if status == "app":
         sensor,location=f1(name)
         print("count_app",count_app)
@@ -309,16 +460,53 @@ def login_page(request):
         return redirect('home')
     else:
       if status =="app":
-        return HttpResponse("credidentals is not correct");     
+        return HttpResponse("credentials are not correct");     
       else:
-        return render(request,'regis.html',{'message':"credidentals are not correct"})
+        return render(request,'login.html',{'message':"Invalid username/email or password"})
       
   except Exception as e:
     print("ANY ERROR",e)
-    if status == "web":
-      return render(request,'regis.html',{'message':"INVALID USER"})
-    else:
-      return HttpResponse("credidentals is not correct"); 
+    # Attempt to reconnect if connection was lost
+    try:
+        connection, _ = opendatabase()
+        cursor = connection.cursor()
+        cursor.execute(query, [identifier, identifier, password])
+        result=cursor.fetchall()
+        if len(result) != 0:
+          tenant_id = result[0][3]
+          if tenant_id:
+            cursor.execute("SELECT is_active FROM tenant WHERE tenant_id=%s", [tenant_id])
+            tenant_res = cursor.fetchone()
+            if tenant_res and not tenant_res[0]:
+              if status == "app":
+                from django.http import JsonResponse
+                return JsonResponse({"message": "Tenant is not activated yet. Please contact the owner."}, status=403)
+              else:
+                return render(request,'login.html',{'message':"Tenant is not activated yet. Please contact the owner."})
+          check="credit"
+          name = result[0][1]
+          actual_username = result[0][0] or result[0][1]
+          current_user_type = result[0][2] or "USER"
+          if status == "app":
+            sensor,location=f1(name)
+            if count_app == "0":
+              count_app=10
+              return HttpResponse(result[0][0]+"#"+result[0][1]+"#"+sensor+"#"+location);
+            else:
+              return redirect('home')
+          else:
+            return redirect('home')
+        else:
+          if status == "app":
+            return HttpResponse("credentials are not correct");
+          else:
+            return render(request,'login.html',{'message':"Invalid username/email or password"})
+    except Exception as e2:
+        print("RECONNECTION ERROR",e2)
+        if status == "web":
+          return render(request,'login.html',{'message':"INVALID USER"})
+        else:
+          return HttpResponse("credentials are not correct");
 
 
 
@@ -349,7 +537,7 @@ def home(request,web=None,amessage=''):
         return render(request,'sensor-selection.html',{
           'sensor':sensor,
           'location':location,
-          'user_name': name if name else 'User',
+          'user_name': actual_username if 'actual_username' in globals() else (name if name else 'User'), 'user_email': name,
           'admin_message':amessage
         })
   except Exception as e:
@@ -357,7 +545,7 @@ def home(request,web=None,amessage=''):
     if web=="app":
       return HttpResponse("YOU ARE NOT A VALID USER..");
     else:
-       return render(request,'login',{'message':"YOU ARE NOT A VALID USER......."})
+       return render(request,'login.html',{'message':"YOU ARE NOT A VALID USER......."})
 
 def dateFix(date):
     if len(date) == 0:
@@ -369,11 +557,15 @@ def dateFix(date):
       return date
 
 
-def dateFormat(request, date, x):
-  from_hr = request.POST['from_hr']
-  from_min = request.POST['from_min']
-  to_hr = request.POST['to_hr']
-  to_min = request.POST['to_min']
+def dateFormat(request_or_dict, date, x):
+  if hasattr(request_or_dict, 'POST'):
+      data = request_or_dict.POST
+  else:
+      data = request_or_dict
+  from_hr = data.get('from_hr', '00')
+  from_min = data.get('from_min', '00')
+  to_hr = data.get('to_hr', '23')
+  to_min = data.get('to_min', '59')
   if x=='f':
     format = str(date) + ' ' + from_hr + ':' + from_min + ':00'
   else:
@@ -383,6 +575,8 @@ def dateFormat(request, date, x):
 
 
 def queryExec(query):
+  if not query or not query.strip():
+      raise ValueError("Generated SQL query is empty")
   # print(query)
   cursor.execute(query)
   result = cursor.fetchall()
@@ -534,48 +728,88 @@ def get_graph(plot):
 
 def firstPart(request):
   try:
-    
-    sensor_id = request.POST.getlist('sensor_list_id')
-    from_date = request.POST['from_date']
-    chart_type = request.POST['chart_type']
-    to_date = request.POST['to_date']
+    if request.method == 'POST':
+        data = request.POST
+        sensor_id = request.POST.getlist('sensor_list_id')
+    else:
+        data = request.session.get('second_part_payload', {})
+        sensor_id = request.session.get('second_part_sensors', [])
+
+    from_date = data.get('from_date', '')
+    chart_type = data.get('chart_type', '')
+    to_date = data.get('to_date', '')
     from_date = dateFix(from_date)
-    from_format = dateFormat(request, from_date, 'f')
+    from_format = dateFormat(data, from_date, 'f')
     to_date = dateFix(to_date)
-    to_Format = dateFormat(request, to_date, 't')
+    to_Format = dateFormat(data, to_date, 't')
     query = prepQuery(chart_type, sensor_id, to_Format, from_format)
     return query
-  except:
+  except Exception as e:
+    import traceback
+    traceback.print_exc()
     return None
 
+def get_scientific_title(key):
+  k = key.lower()
+  if 'ms' in k or 'moisture' in k: return "Soil Moisture Variation"
+  if 'pi' in k or 'pitch' in k: return "Pitch Angle Analysis"
+  if 'pr' in k or 'pressure' in k: return "Pore Water Pressure Analysis"
+  if 'ro' in k or 'roll' in k: return "Roll Sensor Monitoring"
+  if 'rg' in k or 'rain' in k: return "Rainfall Trend"
+  if 'vo' in k or 'voltage' in k: return "Voltage Monitoring"
+  return f"Sensor Analysis: {key}"
 
+def get_scientific_color(index):
+  colors = ['#1f77b4', '#2E8B57', '#D62728', '#FF7F0E', '#9467BD']
+  return colors[index % len(colors)]
 
-
-@no_cache
 def secondPartNew(request):
+  if request.method == 'POST':
+      request.session['second_part_payload'] = request.POST.dict()
+      request.session['second_part_sensors'] = request.POST.getlist('sensor_list_id')
+      return redirect('display_info')
+      
+  payload = request.session.get('second_part_payload', {})
+  sensor_id = request.session.get('second_part_sensors', [])
+
+  global name
   Dict = {}
   Labels = {}
   plt.switch_backend('AGG')
   q = firstPart(request)
-  node_records = queryExec(q)
+  print("Generated Query:", q)
+  print("Query Length:", len(q) if q else 0)
+  print("Selected Sensors:", sensor_id)
+  
+  try:
+      node_records = queryExec(q)
+  except ValueError as e:
+      print(f"Query Validation Error: {e}")
+      node_records = []
+      
   data = setData(node_records)
-  sensor_id = request.POST.getlist('sensor_list_id')
-  duration = request.POST['duration']
-  query_type=request.POST.get('query_type',None)
+  duration = payload.get('duration', '')
+  try:
+    from_date_str = payload.get('from_date', '').strip()
+    to_date_str = payload.get('to_date', '').strip()
+    from_date_str = dateFix(from_date_str)
+    to_date_str = dateFix(to_date_str)
+    import datetime as dt_mod
+    from_date_obj = dt_mod.datetime.strptime(from_date_str, '%Y-%m-%d')
+    to_date_obj = dt_mod.datetime.strptime(to_date_str, '%Y-%m-%d')
+    days_diff = (to_date_obj - from_date_obj).days
+      
+    if str(duration) == "24" and days_diff > 25:
+      duration = "168"
+  except Exception as e:
+    pass
+  query_type=payload.get('query_type',None)
   Labels.update(labelDict(sensor_id))
   Dict.update(sensorDict(data))
   set_ty = getPre(preQuery(sensor_id))
   i = -1
   drawlist={}  
-  num_cols = 2
-  num_rows=(len(Dict["sensorid"]) +num_cols  - 1)
-  # Determine the size of each subplot based on the number of columns and rows
-  subplot_width = 8  # Adjust this as needed
-  subplot_height = 6  # Adjust this as needed
-  # Calculate the total figure size
-  fig_width = subplot_width * num_cols
-  fig_height = subplot_height * num_rows
-  figure, axes = plt.subplots(num_rows, num_cols,figsize=(fig_width, fig_height))
+
   for row in range(0, len(Dict["sensorid"])):
     i += 1
     fy, fx, sy, sx, ty, tx = ([] for _ in range(6))
@@ -615,41 +849,150 @@ def secondPartNew(request):
       response['Content-Disposition'] = 'attachment; filename=%s' % filename
       return response
   else:
+    import json
+    charts = []
+    chart_index = 0
     for key in keys:
-      rows = counter // num_cols
-      cols = counter % num_cols
-      ax = axes[rows, cols]
-      counter=counter+1
-      data=drawlist[key]
-      formatter = mdates.DateFormatter("%d-%m-%y ")
-      locator = mdates.HourLocator(interval=int(duration))
+      data = drawlist[key]
+      color = get_scientific_color(chart_index)
       
-      ax.plot(data['x'],data['y'])
-      ax.xaxis.set_major_formatter(formatter)
-      ax.xaxis.set_major_locator(locator)
-      ax.set_xlabel('Time')
+      raw_x = data['x']
+      raw_y_list = []
+      smoothed_y_list = []
       
       try:
-        final_label=data['value']+"  ("+key+") "
-        ax.set_ylabel(ySet(final_label,key,key))
+        import pandas as pd
+        raw_y = pd.to_numeric(pd.Series(data['y']), errors='coerce')
+        
+        window_size = max(3, min(len(raw_y) // 20, 48))
+        if len(raw_y) > 5:
+            smoothed_y = raw_y.rolling(window=window_size, center=True, min_periods=1).mean()
+        else:
+            smoothed_y = raw_y
+            
+        raw_y_list = [y if pd.notna(y) else None for y in raw_y]
+        smoothed_y_list = [y if pd.notna(y) else None for y in smoothed_y]
       except:
-        pass
+        raw_y_list = data['y']
+        smoothed_y_list = data['y']
       
-    try: 
-      for i in range(len(Dict["sensorid"]), num_rows * num_cols):
-        row = i // num_cols
-        col = i % num_cols
-        figure.delaxes(axes[row, col])
-    except:
-      pass
-    plt.tight_layout()
-    chart = get_graph(figure)
+      try:
+        final_label = data['value'] + " (" + key + ")"
+        raw_ylabel = ySet(final_label, key, key)
+        if 'moisture' in raw_ylabel.lower() or 'ms' in key.lower(): unit = " (%)"
+        elif 'pitch' in raw_ylabel.lower() or 'pi' in key.lower(): unit = " (°)"
+        elif 'roll' in raw_ylabel.lower() or 'ro' in key.lower(): unit = " (°)"
+        elif 'rain' in raw_ylabel.lower() or 'rg' in key.lower(): unit = " (mm)"
+        elif 'pressure' in raw_ylabel.lower() or 'pr' in key.lower(): unit = " (kPa)"
+        elif 'voltage' in raw_ylabel.lower() or 'vo' in key.lower(): unit = " (V)"
+        else: unit = ""
+        ylabel = raw_ylabel.split('(')[0].strip() + unit
+      except:
+        ylabel = key
+        
+      import datetime as dt_mod
+      x_strings = []
+      for dt in raw_x:
+        if isinstance(dt, dt_mod.datetime):
+            x_strings.append(dt.strftime('%Y-%m-%dT%H:%M:%S'))
+        elif isinstance(dt, dt_mod.date):
+            x_strings.append(dt.strftime('%Y-%m-%d'))
+        else:
+            x_strings.append(str(dt))
+            
+      import re
+      key_upper = str(key).upper()
+      node_match = re.search(r'_(N\d+)_', key_upper + '_')
+      if node_match:
+          node_val = node_match.group(1)
+      else:
+          parts = key_upper.split('_')
+          node_val = parts[1] if len(parts) >= 2 else parts[0]
+            
+      charts.append({
+          'id': key,
+          'title': get_scientific_title(key),
+          'raw_x': json.dumps(x_strings),
+          'raw_y': json.dumps(raw_y_list),
+          'smoothed_y': json.dumps(smoothed_y_list),
+          'color': color,
+          'duration': str(duration),
+          'ylabel': ylabel,
+          'node': node_val
+      })
+      chart_index += 1
+      
+    # Calculate status level dynamically based on highest graph variance
+    status_level = 1
+    max_variance = 0
+    global graph_danger_level
+    try:
+        import pandas as pd
+        for key in keys:
+            temp_data = drawlist[key]
+            if len(temp_data['y']) > 0:
+                raw_y = pd.to_numeric(pd.Series(temp_data['y']), errors='coerce').dropna()
+                if len(raw_y) > 0:
+                    y_max = raw_y.abs().max()
+                    max_variance = max(max_variance, y_max)
+        
+        if max_variance > 80: status_level = 4
+        elif max_variance > 50: status_level = 3
+        elif max_variance > 20: status_level = 2
+        else: status_level = 1
+        
+        graph_danger_level = status_level
+    except Exception as e:
+        print("Error calculating status level:", e)
+        graph_danger_level = 1
+
     from datetime import datetime
     now = datetime.now()
+    
+    try:
+        uname = name if name else 'User'
+    except NameError:
+        uname = 'User'
+        
+    try:
+        import csv
+        sensor_id_list = sensor_id
+        from_date_str = payload.get('from_date', '')
+        to_date_str = payload.get('to_date', '')
+        from_date_fixed = dateFix(from_date_str)
+        to_date_fixed = dateFix(to_date_str)
+        from_format = dateFormat(payload, from_date_fixed, 'f')
+        to_Format = dateFormat(payload, to_date_fixed, 't')
+        
+        csv_query = "SELECT * FROM sensor_data WHERE "
+        csv_query += prepareQuery('sensor_id', sensor_id_list)
+        csv_query += " AND receive_time <= (to_timestamp('" + to_Format + "','yyyy-mm-dd hh24:mi:ss')) AND receive_time >= (to_timestamp('" + from_format + "', 'yyyy-mm-dd hh24:mi:ss')) ORDER BY receive_time"
+        
+        cursor.execute(csv_query)
+        csv_records = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        
+        with open('data.csv', 'w+', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(colnames)
+            writer.writerows(csv_records)
+    except Exception as e:
+        print("Error generating full dataset CSV:", e)
+
+    # Save metadata for Cross-Correlation feature
+    request.session['cc_sensors'] = [{'id': c['id'], 'title': c['title']} for c in charts]
+    try:
+        request.session['cc_from_format'] = from_format
+        request.session['cc_to_format'] = to_Format
+    except:
+        pass
+
     return render(request, 'data-visualization.html', {
-      'chart': chart,
+      'charts': charts,
       'current_date': now.strftime('%B %d, %Y'),
-      'current_time': now.strftime('%I:%M %p')
+      'current_time': now.strftime('%I:%M %p'),
+      'user_name': actual_username if 'actual_username' in globals() else uname,
+      'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
     })
   
 
@@ -734,7 +1077,7 @@ def secondPart(request):
     label = Labels[Dict["sensorid"][row]]
     # print('hekkio')
     # print(flag)
-    formatter = mdates.DateFormatter("%d-%m-%y")
+    formatter = mdates.DateFormatter("%d\n%m\n%Y")
     ax.xaxis.set_major_formatter(formatter)
     locator = mdates.HourLocator(interval=int(duration))
     ax.xaxis.set_major_locator(locator)
@@ -747,7 +1090,7 @@ def secondPart(request):
 
     if len(set_ty) >= 2 and flag and ab:
       ax2 = ax.twinx()
-      formatter = mdates.DateFormatter("%d-%m-%y ")
+      formatter = mdates.DateFormatter("%d\n%m\n%Y")
       ax2.xaxis.set_major_formatter(formatter)
       locator = mdates.HourLocator(interval=int(duration))
       ax2.xaxis.set_major_locator(locator)
@@ -760,13 +1103,10 @@ def secondPart(request):
       ab = False
       sx = []
       sy = []
-      for tick in ax2.get_xticklabels():
-        tick.set_rotation(60)
-        tick.set_fontsize(10)
     if len(set_ty) >= 2 and flag and flag1:
        ax3 = ax.twinx()
        ax3.spines.right.set_position(("axes", 1.2))
-       formatter = mdates.DateFormatter("%d-%m-%y ")
+       formatter = mdates.DateFormatter("%d\n%m\n%Y")
        ax3.xaxis.set_major_formatter(formatter)
        locator = mdates.HourLocator(interval=int(duration))
        ax3.xaxis.set_major_locator(locator)
@@ -782,6 +1122,13 @@ def secondPart(request):
   else:
     ax.legend(handles=[p1, p2, p3], loc='upper right')
 
+  for axis in fig.axes:
+      for tick in axis.get_xticklabels():
+          tick.set_rotation(-45)
+          tick.set_ha('left')
+          tick.set_fontsize(10)
+
+  fig.subplots_adjust(bottom=0.2)
   chart = get_graph(fig)
   if len(set_ty) == 1:
     with open('data.csv','w+',newline='') as file:
@@ -790,12 +1137,28 @@ def secondPart(request):
   else:
     csv_file = open('data.csv','w+')
     csv_file.close()
-  return render(request, 'results.html', {'chart': chart})
+  return render(request, 'results.html', {
+      'chart': chart,
+      'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
+  })
   
 def download(request):
+  global check, current_user_type
+  
+  if check != "credit":
+      return HttpResponse("403 Forbidden: You must be logged in.", status=403)
+      
+  active_user_type = current_user_type if 'current_user_type' in globals() else 'USER'
+  if active_user_type != "SUPERVISOR":
+      return HttpResponse("403 Forbidden: You do not have permission to download datasets. Contact a supervisor.", status=403)
+
   filename = "data.csv"
   filepath = "data.csv"
-  csv_file = open("data.csv", 'rb')
+  try:
+    csv_file = open(filepath, 'rb')
+  except FileNotFoundError:
+    return HttpResponse("Data file not generated yet. Please submit a data request first.", status=404)
+    
   mime_type, _ = mimetypes.guess_type(filepath)
   response = HttpResponse(csv_file, content_type = mime_type)
   response['Content-Disposition'] = "attachment; filename = %s" %filename
@@ -803,83 +1166,81 @@ def download(request):
 
 def activate(request, uidb64, token):
   print('HAS CAME HERE')
+  from django.core.signing import TimestampSigner, SignatureExpired, BadSignature
   try:
-    uid = force_text(urlsafe_base64_decode(uidb64))
-    user = User.objects.get(pk=uid)
-    print(user.username)
+    email = force_text(urlsafe_base64_decode(uidb64))
+    signer = TimestampSigner()
+    # Verify token, max age 1 day (86400 seconds)
+    original_uidb64 = signer.unsign(token, max_age=86400)
     
-  except(TypeError, ValueError, OverflowError, User.DoesNotExist):
-    user = None
-    print(user)
-    print(account_activation_token.check_token(user, token))
-  if user is not None and account_activation_token.check_token(user, token):
-      #login(request)
-    innerquery="update user_list set verify='yes' where uname='"+user.username+"'"
-    cursor.execute(innerquery)
-    connection.commit();  
-    return HttpResponse("Thank you for your email confirmation. Now you can login your account after validate the admin YOU WILL GET THE CONFIRMATION MAIL WHEN ADMIN ALLOWS YOU.<a href='/regis.html'>CLICK HERE TO HOME</a>")
-  else:
-    return HttpResponse("Activation link is invalid!<a href='/regis.html'>CLICK HERE TO RETURN</a>")  
+    if uidb64 == original_uidb64:
+      innerquery="update user_list set verify='yes' where email_id=%s"
+      cursor.execute(innerquery, [email])
+      connection.commit()
+      return HttpResponse("Thank you for your email confirmation. Now you can login to your account after admin validation. <br><a href='/'>CLICK HERE TO HOME</a>")
+    else:
+      return HttpResponse("Activation link is invalid! <br><a href='/'>CLICK HERE TO RETURN</a>")
+  except (SignatureExpired, BadSignature, TypeError, ValueError, OverflowError) as e:
+    print('Activation Error:', e)
+    return HttpResponse("Activation link is invalid or expired! <br><a href='/'>CLICK HERE TO RETURN</a>")  
          #190720950
          
          
          
 def registration(request):
-  fmessage='PROBLY DUPLICATE USER'
-  name=request.POST['t1']
-  password=request.POST['t3']
-  ph_no=request.POST['t4']
-  email=request.POST['t5']
-  utype=request.POST['t6']
-  web=request.POST["web"]
-  query="insert into user_list values('"+name+"','"+password+"','"+ph_no+"','"+email+"','"+utype+"','unaccepted')"
+  global name
+  global actual_username
+  global check
   try:
-    print('OK')
-    print(account_activation_token)
-    
-    user= User.objects.create_user(username=name,email=email,password=password)
-    
-    
-    print(user.username)
-    current_site = get_current_site(request)
+    full_name=request.POST['t1']
+    password=request.POST['t3']
+    ph_no=request.POST['t4']
+    email=request.POST['t5']
+    utype=request.POST['t6']
+    tenant_id=request.POST['tenant_id']
+    web=request.POST.get("web", "web")
+  except KeyError as e:
+    return render(request, 'register.html', {'message': f'Missing field: {str(e)}'})
 
-    print(urlsafe_base64_encode(force_bytes(user)))
-    print(account_activation_token.make_token(user))
-    mail_subject = 'Activate your NMHS account.'
-    message = render_to_string('acc_active_email.html',{
-                'name': name,
-                'domain': current_site.domain,
-                'uid':urlsafe_base64_encode(force_bytes(user.pk)),
-                'token':account_activation_token.make_token(user),
-            })
-    print('OK@')
-    semail = EmailMessage(mail_subject, message, to=[email])
-    semail.send()
-    
-    cursor.execute(query)
-    connection.commit();
-    fmessage="PLEASE CHECK YOUR EMAIL ID"
-    print('OK1')
-    print(web)
+  try:
+    # Check if user already exists in user_list
+    cursor.execute("SELECT uname FROM user_list WHERE uname = %s", [full_name])
+    if cursor.fetchone():
+        return render(request, 'register.html', {'message': 'Username already taken.'})
+        
+    cursor.execute("SELECT email_id FROM user_list WHERE email_id = %s", [email])
+    if cursor.fetchone():
+        return render(request, 'register.html', {'message': 'Email already registered.'})
+
+    query="insert into user_list(uname, upassword, ph_no, email_id, user_type, status, verify, tenant_id) values(%s, %s, %s, %s, %s, 'accepted', 'yes', %s)"
+    try:
+        cursor.execute(query, [full_name, password, ph_no, email, utype, tenant_id])
+        connection.commit()
+    except Exception as db_e:
+        # Fallback to original insert if column names are wrong
+        connection.rollback()
+        query="insert into user_list values(%s, %s, %s, %s, %s, 'accepted', 'yes', 1)"
+        cursor.execute(query, [full_name, password, ph_no, email, utype])
+        connection.commit()
+
+    # Automatically log the user in
+    name = email
+    actual_username = full_name or email
+    check = "credit"
+
     if web == "app":
-      return HttpResponse("PLEASE CONFIRM YOUR EMAIL ID"); 
+      return HttpResponse(email + "#" + "SUCCESS" + "#" + "" + "#" + "")
     else:
-      return render(request,'regis.html',{'message':" PLEASE CONFIEM YOUR EMAIL ID"})
+      return redirect('home')
+      
   except Exception as e:
-    #print("ANY ERROR",e)
-    message='DATA HAS NOT BEEN INSERTED,SERVER ERROR'
-     
+    import traceback
+    print('Registration Exception:', e)
+    traceback.print_exc()
     if web == "app":
-      return HttpResponse("DATA HAS BEEN NOT SUBMITTED......"); 
+      return HttpResponse("Unable to create account at the moment. Please try again later.")
     else:
-      print('message is1',e)
-      return HttpResponse("DATA HAS BEEN NOT SUBMITTED......"); 
-  finally:
-    if web=="app":
-      return HttpResponse("PLEASE CONFIRM YOUR EMAIL ID"); 
-    else:
-      print('message is final')
-      return render(request,'regis.html',{'message':fmessage})
+      return render(request, 'register.html', {'message': "Unable to create account at the moment. Please try again later."})
      
 
 
@@ -916,3 +1277,191 @@ def coming_soon(request):
     context = {'user_name': name if check == "credit" else None}
     return render(request, 'coming-soon.html', context)
 
+def team(request):
+    """Render the Team page"""
+    global check, name
+    context = {'user_name': name if check == "credit" else None}
+    return render(request, 'team.html', context)
+
+def monitoring_page(request):
+    """Render the Monitoring Scale page"""
+    global check, name
+    global graph_danger_level
+    
+    try:
+        status_level = graph_danger_level
+    except NameError:
+        status_level = 1
+        
+    context = {
+        'user_name': name if check == "credit" else None,
+        'graph_status_level': status_level
+    }
+    return render(request, 'monitoring.html', context)
+
+
+def profile_view(request):
+    global check, name, connection, cursor
+    try:
+        is_logged_in = (check == "credit")
+    except NameError:
+        is_logged_in = False
+        
+    try:
+        current_email = name
+    except NameError:
+        current_email = None
+        
+    if not is_logged_in or not current_email:
+        return redirect('signin')
+        
+    # Re-fetch connection if closed
+    try:
+        cursor.execute("SELECT uname, email_id, tenant_id, created_at FROM user_list WHERE email_id=%s", [current_email])
+    except Exception:
+        connection, _ = opendatabase()
+        cursor = connection.cursor()
+        cursor.execute("SELECT uname, email_id, tenant_id, created_at FROM user_list WHERE email_id=%s", [current_email])
+        
+    user_data = cursor.fetchone()
+    
+    if not user_data:
+        return redirect('signin')
+        
+    uname, email_id, tenant_id, created_at = user_data
+    
+    # Fetch tenant data
+    cursor.execute("SELECT tenant_id, tenant_name, contact_email, remarks FROM tenant WHERE tenant_id=%s", [tenant_id])
+    tenant_data = cursor.fetchone()
+    
+    if tenant_data:
+        t_id, t_name, t_email, t_remarks = tenant_data
+        if t_remarks and " for " in t_remarks and " Landslide" in t_remarks:
+            state = t_remarks.split(" for ")[1].split(" Landslide")[0]
+            display_name = f"{state} ({t_name})"
+        else:
+            display_name = f"{t_name}"
+    else:
+        t_id = ""
+        t_email = ""
+        display_name = "N/A"
+        t_remarks = ""
+
+    if created_at:
+        formatted_date = created_at.strftime("%B %d, %Y")
+    else:
+        formatted_date = "N/A"
+        
+    context = {
+        'user_name': uname,
+        'email_id': email_id,
+        'created_at': formatted_date,
+        'tenant_id': t_id,
+        'tenant_name': display_name,
+        'tenant_contact': t_email,
+        'tenant_remarks': t_remarks,
+        'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
+    }
+    
+    return render(request, 'profile.html', context)
+
+
+def update_profile(request):
+    global check, name, connection, cursor
+    try:
+        is_logged_in = (check == "credit")
+    except NameError:
+        is_logged_in = False
+        
+    try:
+        current_email = name
+    except NameError:
+        current_email = None
+        
+    if not is_logged_in or not current_email:
+        return redirect('signin')
+        
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # Ensure connection
+        try:
+            cursor.execute("SELECT 1")
+        except Exception:
+            connection, _ = opendatabase()
+            cursor = connection.cursor()
+        
+        if action == 'update_username':
+            new_username = request.POST.get('username')
+            if new_username and new_username.strip():
+                try:
+                    cursor.execute("UPDATE user_list SET uname=%s WHERE email_id=%s", [new_username.strip(), current_email])
+                    connection.commit()
+                    messages.success(request, 'Username updated successfully.')
+                except Exception as e:
+                    messages.error(request, 'Failed to update username.')
+            else:
+                messages.error(request, 'Username cannot be empty.')
+                
+        elif action == 'update_password':
+            current_password = request.POST.get('current_password')
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            cursor.execute("SELECT upassword FROM user_list WHERE email_id=%s", [current_email])
+            row = cursor.fetchone()
+            
+            if row and row[0] == current_password:
+                if new_password and new_password == confirm_password:
+                    try:
+                        cursor.execute("UPDATE user_list SET upassword=%s WHERE email_id=%s", [new_password, current_email])
+                        connection.commit()
+                        messages.success(request, 'Password changed successfully.')
+                    except Exception as e:
+                        messages.error(request, 'Failed to change password.')
+                else:
+                    messages.error(request, 'New passwords do not match or are empty.')
+            else:
+                messages.error(request, 'Incorrect current password.')
+                
+    return redirect('profile')
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+@csrf_exempt
+def api_register_tenant(request):
+    global connection, cursor
+    if request.method == 'POST':
+        tenant_name = request.POST.get('tenant_name')
+        contact_email = request.POST.get('contact_email')
+        remarks = request.POST.get('remarks')
+        
+        if not tenant_name or not contact_email:
+            return JsonResponse({"success": False, "message": "Tenant name and contact email are required."}, status=400)
+            
+        try:
+            # Ensure connection
+            try:
+                cursor.execute("SELECT 1")
+            except Exception:
+                connection, _ = opendatabase()
+                cursor = connection.cursor()
+                
+            # Explicitly insert with is_active = False
+            query = """
+                INSERT INTO tenant (tenant_name, contact_email, remarks, is_active, created_at)
+                VALUES (%s, %s, %s, FALSE, NOW())
+            """
+            cursor.execute(query, [tenant_name, contact_email, remarks])
+            connection.commit()
+            
+            return JsonResponse({
+                "success": True, 
+                "message": "Registration completed. To activate the tenant please contact the owner."
+            })
+        except Exception as e:
+            print("Error registering tenant:", e)
+            return JsonResponse({"success": False, "message": "Failed to register tenant. Please try again."}, status=500)
+    
+    return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)

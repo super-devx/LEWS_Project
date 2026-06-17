@@ -1545,3 +1545,126 @@ input:focus-visible {
 .skip-link:focus {
     top: 0;
 }
+
+/* ===== FUNDING ORGANIZATIONS SECTION ===== */
+.funding-section-container {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+.funding-section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s ease-out;
+}
+
+.funding-section-header.animate-fade-in-up {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.funding-header-line {
+    display: none;
+}
+
+.funding-header-title {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-accent-500);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+    padding: var(--space-2) var(--space-5);
+    border: 2px solid var(--color-accent-500);
+    border-radius: 30px;
+    background: rgba(255, 122, 47, 0.05);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.funding-header-title:hover {
+    background: var(--color-accent-500);
+    color: var(--color-white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 122, 47, 0.25);
+}
+
+.funding-scalable-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+}
+
+@media (max-width: 1024px) {
+    .funding-scalable-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .funding-scalable-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.funding-org-card {
+    background: var(--color-white);
+    border-radius: 12px;
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    border-top: 3px solid transparent;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.funding-org-card.animate-fade-in-up {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.funding-org-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-top-color: var(--color-accent-500);
+}
+
+.funding-org-icon {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-4);
+}
+
+.funding-org-icon img {
+    max-height: 50px;
+    max-width: 150px;
+    object-fit: contain;
+    transition: transform 0.4s ease;
+}
+
+.funding-org-card:hover .funding-org-icon img {
+    transform: scale(1.05);
+}
+
+.funding-org-name {
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    color: var(--color-primary-900);
+    margin-bottom: var(--space-2);
+}
+
+.funding-org-role {
+    font-size: 0.85rem;
+    color: var(--color-gray-500);
+    letter-spacing: 0.5px;
+}

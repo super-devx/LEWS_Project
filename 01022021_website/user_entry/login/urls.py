@@ -1,13 +1,14 @@
 from django.urls import path
 from django.conf.urls import url
 from . import views
-
+from . import cross_correlation_views
 urlpatterns = [
     path('login', views.home, name=''),
     path('', views.index, name='landing'),
     path('regis_page', views.registration, name=''),
     path('regis.html', views.login_form, name='login_form'),
     path('home', views.home, name='home'),
+    path('monitoring', views.monitoring_page, name='monitoring'),
     path('login_page', views.login_page, name=''),
     path('home.html', views.home, name=''),
     path('signin', views.login_form, name='signin'),
@@ -21,9 +22,15 @@ urlpatterns = [
     path('insert',views.insert, name=''),
     path('logout.html',views.logout, name='logout_legacy'),
     # New pages
+    path('profile', views.profile_view, name='profile'),
+    path('profile/update', views.update_profile, name='update_profile'),
     path('about', views.about, name='about'),
     path('mission', views.mission, name='mission'),
     path('contact', views.contact, name='contact'),
     path('coming-soon', views.coming_soon, name='coming_soon'),
-    url(r'^activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',views.activate, name='activate'),
+    path('team', views.team, name='team'),
+    path('activate/<str:uidb64>/<str:token>/', views.activate, name='activate'),
+    path('api/tenants/register', views.api_register_tenant, name='api_register_tenant'),
+    path('cross-correlation/', cross_correlation_views.cross_correlation_page, name='cross_correlation'),
+    path('cross-correlation/analyze/', cross_correlation_views.cross_correlation_analyze, name='cross_correlation_analyze'),
 ]

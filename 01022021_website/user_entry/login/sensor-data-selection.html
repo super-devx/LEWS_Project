@@ -22,10 +22,50 @@
     <link rel="stylesheet" href="{% static 'css/footer.css' %}">
     <link rel="stylesheet" href="{% static 'css/sensor-selection-style.css' %}">
     <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <style>
+        .sensor-limit-toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: #ffffff;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+            padding: 16px 24px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 9999;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #1e293b;
+            font-weight: 500;
+            font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif;
+        }
+        .sensor-limit-toast.show-toast {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .sensor-limit-toast .toast-icon {
+            color: #3b82f6;
+            font-size: 1.25rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
     {% include 'navbar-include.html' %}
+
+    <!-- Full Page Loading Overlay -->
+    <div id="fullPageLoader" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 255, 255, 0.75); z-index: 99999; backdrop-filter: blur(4px); pointer-events: all; flex-direction: column; justify-content: center; align-items: center;">
+        <div class="spinner-border text-primary" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.35em;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="mt-4 fw-bold text-primary" style="font-family: 'Poppins', sans-serif;">Generating Visualization...</h4>
+        <p class="text-muted" style="font-family: 'Open Sans', sans-serif; font-size: 1.1rem;">Please wait while sensor data is being processed.</p>
+    </div>
 
     <!-- Main Content -->
     <main id="main-content">
@@ -34,25 +74,12 @@
             <div class="bg-pattern"></div>
         </div>
 
-    <!-- Progress Indicator -->
-    <div class="container mt-4">
-        <div class="progress-steps">
-            <div class="step completed">
-                <div class="step-label">Login</div>
-            </div>
-            <div class="step completed">
-                <div class="step-label">Select Filters</div>
-            </div>
-            <div class="step active">
-                <div class="step-label">Configure View</div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Main Selection Container -->
-    <div class="container selection-container">
+    <div class="container selection-container mt-5">
         <div class="selection-card">
-            <form method="post" action="add" id="dataConfigForm">
+            <form method="post" action="add" id="dataConfigForm" style="position: relative;">
                 {% csrf_token %}
                 <input type="hidden" value="{{ hidden_value }}" name="tt">
 
@@ -68,7 +95,16 @@
 
                     <div class="checkbox-grid">
                         {% autoescape off %}
-                        {{ sensor_id }}
+                        {% if sensor_id %}
+                            {{ sensor_id }}
+                        {% else %}
+                            <div class="styled-card" style="grid-column: 1 / -1; justify-content: center; background: rgba(255, 107, 53, 0.1); border-color: rgba(255, 107, 53, 0.5);">
+                                <div class="styled-card-content" style="gap: 15px;">
+                                    <i class="fas fa-exclamation-triangle styled-icon" style="color: #ff6b35;"></i>
+                                    <span class="styled-text" style="color: #0f1623; letter-spacing: normal; text-transform: none;">No sensors found for the selected types and locations. Please go back and select a different combination.</span>
+                                </div>
+                            </div>
+                        {% endif %}
                         {% endautoescape %}
                     </div>
                 </div>
@@ -192,30 +228,16 @@
                     </div>
                 </div>
 
-                <!-- Visualization Options -->
-                <div class="selection-section mt-5">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="fas fa-cog me-2"></i>
-                            Visualization Options
-                        </h2>
-                        <p class="section-description">Configure how you want to view the data</p>
-                    </div>
+                <!-- Visualization Options (Simplified) -->
+                <div class="selection-section mt-4">
+                    <!-- Hidden inputs for removed fields to maintain backend functionality -->
+                    <input type="hidden" name="chart_type" value="timeseries">
+                    <input type="hidden" name="query_type" value="1">
+                    <input type="checkbox" name="download" style="display: none;">
 
                     <div class="row g-4">
-                        <!-- Chart Type -->
-                        <div class="col-md-4">
-                            <label for="chart_type" class="form-label">
-                                <i class="fas fa-chart-bar me-2"></i>Chart Type
-                            </label>
-                            <select name="chart_type" id="chart_type" class="form-select">
-                                <option value="timeseries">Time Series</option>
-                                <option value="bar">Bar Chart</option>
-                            </select>
-                        </div>
-
-                        <!-- Duration -->
-                        <div class="col-md-4">
+                        <!-- Duration / Data Interval -->
+                        <div class="col-md-6">
                             <label for="duration" class="form-label">
                                 <i class="fas fa-clock me-2"></i>Data Interval
                             </label>
@@ -225,29 +247,9 @@
                                 <option value="168">Week Wise</option>
                                 <option value="24">Day Wise</option>
                                 <option value="1">Hour Wise</option>
-                                <option value="2">2 Hours</option>
-                                <option value="15">15 Hours</option>
-                                <option value="30">30 Hours</option>
-                                <option value="90">90 Hours</option>
-                                <option value="120">120 Hours</option>
-                                <option value="150">150 Hours</option>
-                                <option value="200">200 Hours</option>
-                            </select>
-                        </div>
-
-                        <!-- Query Type -->
-                        <div class="col-md-4">
-                            <label for="query_type" class="form-label">
-                                <i class="fas fa-eye me-2"></i>Action
-                            </label>
-                            <select name="query_type" id="query_type" class="form-select">
-                                <option value="1">View Data</option>
-                                <option value="0">Download Data</option>
                             </select>
                         </div>
                     </div>
-
-                    <input type="checkbox" name="download" style="display: none;">
                 </div>
 
                 <!-- Selection Summary -->
@@ -255,13 +257,20 @@
                     <div class="summary-content">
                         <i class="fas fa-info-circle summary-icon"></i>
                         <span class="summary-text">
-                            <strong id="selected-sensor-count">0</strong> sensor(s) selected for visualization
+                            <strong id="selected-sensor-count">0</strong> / 6 sensor(s) selected for visualization
                         </span>
                     </div>
                 </div>
 
+                <!-- Sticky Back Button -->
+                <div style="position: sticky; bottom: 32px; width: max-content; z-index: 100; margin-bottom: -45px; transform: translateY(32px);">
+                    <button type="button" class="btn-action btn-primary" onclick="window.history.back()" style="box-shadow: 0 6px 16px rgba(255, 122, 61, 0.25);">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </button>
+                </div>
+
                 <!-- Form Actions -->
-                <div class="form-actions">
+                <div class="form-actions" style="justify-content: flex-end; position: relative;">
                     <button type="submit" class="btn-action btn-primary">
                         <i class="fas fa-chart-line me-2"></i>Generate Visualization
                     </button>
@@ -291,17 +300,71 @@
             $('#from_date').val(today);
             $('#to_date').val(today);
 
+            // Toast Notification HTML injected into body
+            if ($('#sensorLimitToast').length === 0) {
+                $('body').append(`
+                    <div id="sensorLimitToast" class="sensor-limit-toast">
+                        <i class="fas fa-info-circle toast-icon"></i>
+                        <span>You can select a maximum of 6 sensors only.</span>
+                    </div>
+                `);
+            }
+
+            // Loader Management
+            window.showLoader = function() {
+                $('#fullPageLoader').css('display', 'flex');
+                $('#dataConfigForm button[type="submit"]').prop('disabled', true).css('pointer-events', 'none');
+                $('body').attr('aria-busy', 'true');
+                $('#main-content').css('pointer-events', 'none');
+            };
+
+            window.hideLoader = function() {
+                isSubmitting = false;
+                $('#fullPageLoader').css('display', 'none');
+                $('#dataConfigForm button[type="submit"]').prop('disabled', false).css('pointer-events', 'auto');
+                $('body').removeAttr('aria-busy');
+                $('#main-content').css('pointer-events', 'auto');
+            };
+
             // Update selection count
             function updateSelectionCount() {
                 const sensorCount = $('input[name="sensor_list_id"]:checked').length;
                 $('#selected-sensor-count').text(sensorCount);
             }
 
-            // Update count when checkboxes change
-            $('input[name="sensor_list_id"]').on('change', updateSelectionCount);
+            // Handle checkbox changes with strict limit
+            let toastTimeout;
+            $('input[name="sensor_list_id"]').on('change', function(e) {
+                const checkedSensors = $('input[name="sensor_list_id"]:checked');
+                
+                if (checkedSensors.length > 6) {
+                    // Prevent checking the 7th
+                    $(this).prop('checked', false);
+                    
+                    // Show custom toast
+                    const toast = $('#sensorLimitToast');
+                    toast.addClass('show-toast');
+                    
+                    // Auto-hide after 3 seconds
+                    clearTimeout(toastTimeout);
+                    toastTimeout = setTimeout(() => {
+                        toast.removeClass('show-toast');
+                    }, 3000);
+                }
+                
+                updateSelectionCount();
+            });
+
+            // Interaction Lock Flag
+            let isSubmitting = false;
 
             // Form validation
             $('#dataConfigForm').on('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+
                 const sensorSelected = $('input[name="sensor_list_id"]:checked').length > 0;
 
                 if (!sensorSelected) {
@@ -325,7 +388,43 @@
                     return false;
                 }
 
-                return true;
+                // Single Day Validation for Hour Wise
+                const duration = $('#duration').val();
+                if (duration === "1" && fromDate !== toDate) {
+                    e.preventDefault();
+                    alert('Hour-wise visualization is available only for a single day. Please select the same start and end date.');
+                    return false;
+                }
+
+                // Validation passed - Lock interactions and show loader
+                isSubmitting = true;
+                
+                try {
+                    window.showLoader();
+                    return true;
+                } catch(error) {
+                    console.error("Submission error:", error);
+                    window.hideLoader();
+                    return false;
+                }
+            });
+
+            // Handle bfcache (user clicks Back from results page)
+            $(window).on('pageshow', function(event) {
+                if (event.originalEvent.persisted) {
+                    window.hideLoader();
+                }
+            });
+
+            // Real-time validation enhancement
+            $('#from_date, #to_date, #duration').on('change', function() {
+                const fDate = $('#from_date').val();
+                const tDate = $('#to_date').val();
+                const dur = $('#duration').val();
+                
+                if (dur === "1" && fDate && tDate && fDate !== tDate) {
+                    alert('Hour-wise visualization is available only for a single day. Please select the same start and end date.');
+                }
             });
 
             // Initialize count

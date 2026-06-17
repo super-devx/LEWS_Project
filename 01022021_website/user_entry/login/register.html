@@ -92,11 +92,6 @@
                 <span>Back to Home</span>
             </a>
 
-            <!-- Security Badge -->
-            <div class="auth-security-badge">
-                <i class="fas fa-shield-halved"></i>
-                <span>256-bit Encryption</span>
-            </div>
 
             <!-- Auth Card -->
             <div class="auth-card auth-card-glass">
@@ -118,6 +113,25 @@
                     <span>{{ message }}</span>
                 </div>
                 {% endif %}
+
+                <!-- Registration Type Toggle -->
+                <div class="auth-toggle-wrapper" style="display: flex; justify-content: center; margin-bottom: 2rem;">
+                    <div class="btn-group" role="group" aria-label="Registration Type" style="border-radius: 30px; overflow: hidden; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.1);">
+                        <input type="radio" class="btn-check" name="regType" id="regTypeUser" autocomplete="off" checked>
+                        <label class="btn btn-outline-light px-4 py-2" for="regTypeUser" style="border: none; border-radius: 0;">User</label>
+
+                        <input type="radio" class="btn-check" name="regType" id="regTypeTenant" autocomplete="off">
+                        <label class="btn btn-outline-light px-4 py-2" for="regTypeTenant" style="border: none; border-radius: 0;">Tenant</label>
+                    </div>
+                </div>
+
+                <style>
+                    .btn-check:checked + .btn-outline-light {
+                        background-color: rgba(255,255,255,0.2);
+                        color: #fff;
+                        font-weight: 600;
+                    }
+                </style>
 
                 <!-- Registration Form -->
                 <form method="post" action="regis_page" id="registerForm" class="auth-form" novalidate>
@@ -161,7 +175,7 @@
                             <input
                                 type="email"
                                 id="email"
-                                name="t2"
+                                name="t5"
                                 class="auth-form-input"
                                 placeholder="Enter your email address"
                                 autocomplete="email"
@@ -187,7 +201,7 @@
                             <input
                                 type="tel"
                                 id="phone"
-                                name="t3"
+                                name="t4"
                                 class="auth-form-input"
                                 placeholder="Enter your phone number"
                                 autocomplete="tel"
@@ -213,7 +227,7 @@
                             <input
                                 type="password"
                                 id="password"
-                                name="t4"
+                                name="t3"
                                 class="auth-form-input has-toggle"
                                 placeholder="Create a strong password"
                                 autocomplete="new-password"
@@ -255,7 +269,7 @@
                             <input
                                 type="password"
                                 id="confirmPassword"
-                                name="t5"
+                                name="t_confirm"
                                 class="auth-form-input has-toggle"
                                 placeholder="Confirm your password"
                                 autocomplete="new-password"
@@ -277,31 +291,27 @@
                         </div>
                     </div>
 
-                    <!-- User Type Selection -->
+                    <!-- Site / Tenant Selection -->
                     <div class="auth-form-group">
-                        <label class="auth-form-label">
+                        <label class="auth-form-label" for="tenant_id">
                             <span class="auth-form-label-icon">
-                                <i class="fas fa-users"></i>
-                                Account Type
+                                <i class="fas fa-map-marker-alt"></i>
+                                Select Monitoring Site
                             </span>
                         </label>
-                        <div class="auth-user-type">
-                            <div class="auth-user-type-option">
-                                <input type="radio" id="userTypeResearcher" name="t6" value="RESEARCHER" checked>
-                                <label for="userTypeResearcher">
-                                    <i class="fas fa-flask"></i>
-                                    <span>Researcher</span>
-                                </label>
-                            </div>
-                            <div class="auth-user-type-option">
-                                <input type="radio" id="userTypeOfficial" name="t6" value="OFFICIAL">
-                                <label for="userTypeOfficial">
-                                    <i class="fas fa-building"></i>
-                                    <span>Official</span>
-                                </label>
-                            </div>
+                        <div class="auth-input-wrapper">
+                            <select id="tenant_id" name="tenant_id" class="form-select border-secondary" required style="padding-left: 2.5rem; height: 3rem; background-color: #fff; color: #000;">
+                                <option value="" disabled selected style="color: #666;">Select Site / Tenant</option>
+                                {% for t in tenants %}
+                                    <option value="{{ t.id }}" style="color: #000;">{{ t.id }} - {{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fas fa-map-marker-alt auth-input-icon" style="z-index: 5; color: #666;"></i>
                         </div>
                     </div>
+
+                    <!-- Hidden User Type Selection -->
+                    <input type="hidden" name="t6" value="USER">
 
                     <!-- Hidden field for request type -->
                     <input type="hidden" value="web" name="web">
@@ -331,6 +341,104 @@
                 <div class="auth-card-footer">
                     <p>Already have an account? <a href="{% url 'signin' %}">Sign in here</a></p>
                 </div>
+
+                <!-- Tenant Registration Form (Hidden by default) -->
+                <form method="post" action="/api/tenants/register" id="tenantRegisterForm" class="auth-form" style="display: none;" novalidate>
+                    
+                    <!-- Tenant Name Field -->
+                    <div class="auth-form-group">
+                        <label class="auth-form-label" for="tenantName">
+                            <span class="auth-form-label-icon">
+                                <i class="fas fa-building"></i>
+                                Organization Name
+                            </span>
+                        </label>
+                        <div class="auth-input-wrapper">
+                            <input
+                                type="text"
+                                id="tenantName"
+                                name="tenant_name"
+                                class="auth-form-input"
+                                placeholder="Enter organization name"
+                                required
+                                minlength="3"
+                                maxlength="100"
+                            >
+                            <i class="fas fa-building auth-input-icon"></i>
+                        </div>
+                        <div class="auth-validation-message error" id="tenantNameError" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter organization name (min 3 chars)</span>
+                        </div>
+                    </div>
+
+                    <!-- Contact Email Field -->
+                    <div class="auth-form-group">
+                        <label class="auth-form-label" for="tenantEmail">
+                            <span class="auth-form-label-icon">
+                                <i class="fas fa-envelope"></i>
+                                Contact Email
+                            </span>
+                        </label>
+                        <div class="auth-input-wrapper">
+                            <input
+                                type="email"
+                                id="tenantEmail"
+                                name="contact_email"
+                                class="auth-form-input"
+                                placeholder="Enter contact email"
+                                required
+                            >
+                            <i class="fas fa-envelope auth-input-icon"></i>
+                        </div>
+                        <div class="auth-validation-message error" id="tenantEmailError" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter a valid email address</span>
+                        </div>
+                    </div>
+
+                    <!-- Remarks Field -->
+                    <div class="auth-form-group">
+                        <label class="auth-form-label" for="tenantRemarks">
+                            <span class="auth-form-label-icon">
+                                <i class="fas fa-comment-alt"></i>
+                                Remarks (Optional)
+                            </span>
+                        </label>
+                        <div class="auth-input-wrapper" style="height: auto;">
+                            <textarea
+                                id="tenantRemarks"
+                                name="remarks"
+                                class="auth-form-input"
+                                placeholder="Brief description about your organization"
+                                maxlength="500"
+                                rows="3"
+                                style="height: auto; padding-top: 10px; resize: vertical;"
+                            ></textarea>
+                            <i class="fas fa-comment-alt auth-input-icon" style="top: 15px; transform: none;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="auth-form-group">
+                        <label class="auth-checkbox-wrapper">
+                            <input type="checkbox" class="auth-checkbox" id="tenantAgreeTerms" required>
+                            <span class="auth-terms">
+                                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                            </span>
+                        </label>
+                        <div class="auth-validation-message error" id="tenantTermsError" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>You must agree to the terms to continue</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="auth-btn auth-btn-primary auth-btn-block" id="tenantRegisterBtn">
+                        <i class="fas fa-building"></i>
+                        <span>Register Organization</span>
+                    </button>
+                </form>
 
                 <!-- Additional Info -->
                 <div class="auth-session-info">
@@ -528,6 +636,104 @@
 
         // Auto-focus on first field
         $('#fullName').focus();
+        // Toggle Logic
+        $('input[name="regType"]').on('change', function() {
+            if ($('#regTypeUser').is(':checked')) {
+                $('#registerForm').show();
+                $('#tenantRegisterForm').hide();
+            } else {
+                $('#registerForm').hide();
+                $('#tenantRegisterForm').show();
+            }
+        });
+
+        // Tenant Validation Functions
+        function validateTenantName() {
+            const name = $('#tenantName').val().trim();
+            if (name === '' || name.length < 3) {
+                $('#tenantName').addClass('is-invalid').removeClass('is-valid');
+                $('#tenantNameError').show();
+                return false;
+            }
+            $('#tenantName').addClass('is-valid').removeClass('is-invalid');
+            $('#tenantNameError').hide();
+            return true;
+        }
+
+        function validateTenantEmail() {
+            const email = $('#tenantEmail').val().trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                $('#tenantEmail').addClass('is-invalid').removeClass('is-valid');
+                $('#tenantEmailError').show();
+                return false;
+            }
+            $('#tenantEmail').addClass('is-valid').removeClass('is-invalid');
+            $('#tenantEmailError').hide();
+            return true;
+        }
+
+        function validateTenantTerms() {
+            if (!$('#tenantAgreeTerms').is(':checked')) {
+                $('#tenantTermsError').show();
+                return false;
+            }
+            $('#tenantTermsError').hide();
+            return true;
+        }
+
+        $('#tenantName').on('blur input', validateTenantName);
+        $('#tenantEmail').on('blur input', validateTenantEmail);
+        $('#tenantAgreeTerms').on('change', validateTenantTerms);
+
+        // Tenant Form submission validation & AJAX
+        $('#tenantRegisterForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const validations = [
+                validateTenantName(),
+                validateTenantEmail(),
+                validateTenantTerms()
+            ];
+
+            const isValid = validations.every(v => v === true);
+
+            if (!isValid) {
+                const invalidField = $('#tenantRegisterForm .auth-form-input.is-invalid').first();
+                if (invalidField.length) {
+                    invalidField.focus();
+                }
+                return false;
+            }
+
+            const btn = $('#tenantRegisterBtn');
+            btn.addClass('auth-btn-loading').prop('disabled', true);
+
+            $.ajax({
+                type: 'POST',
+                url: '/api/tenants/register',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if(response.success) {
+                        // Create success modal on the fly or just an alert
+                        alert("✅ " + response.message);
+                        window.location.href = "{% url 'signin' %}";
+                    } else {
+                        alert("❌ " + response.message);
+                        btn.removeClass('auth-btn-loading').prop('disabled', false);
+                    }
+                },
+                error: function(xhr) {
+                    let msg = "An error occurred.";
+                    if(xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    alert("❌ " + msg);
+                    btn.removeClass('auth-btn-loading').prop('disabled', false);
+                }
+            });
+        });
+
     });
     </script>
 

@@ -332,17 +332,53 @@ def fetch_info(request):
 
   sensor_id.sort(key=sort_sensor_key)
 
-  sensor_id_list=""
-  count=1
+  sensor_mapping = {
+      'MS1': 'Soil Moisture 1', 'MS2': 'Soil Moisture 2', 'MS3': 'Soil Moisture 3',
+      'PR1': 'Pressure 1', 'PR2': 'Pressure 2', 'PR3': 'Pressure 3',
+      'RO1': 'Roll 1', 'RO2': 'Roll 2', 'RO3': 'Roll 3',
+      'PI1': 'Pitch 1', 'PI2': 'Pitch 2', 'PI3': 'Pitch 3',
+  }
+
+  sensor_id_list = ""
+  
+  # Group sensors by node
+  nodes = {}
   for row in sensor_id:
-    sensor_id_list += (
-        f"<li><label class='styled-card' for='{row}'>"
-        f"<div class='styled-card-content'>"
-        f"<input class='styled-checkbox' id='{row}' name='sensor_list_id' type='checkbox' value='{row}'>"
-        f"<span class='styled-text'>{row.upper()}</span>"
-        f"</div>"
-        f"</label></li>"
-    )
+      s_upper = row.upper()
+      n_match = re.search(r'_N(\d+)', s_upper)
+      node_name = f"Node {n_match.group(1)}" if n_match else "Other Sensors"
+      
+      suffix_match = re.search(r'_([A-Z0-9]+)$', s_upper)
+      display_name = s_upper
+      if suffix_match:
+          suffix = suffix_match.group(1)
+          if suffix in sensor_mapping:
+              display_name = sensor_mapping[suffix]
+              
+      if node_name not in nodes:
+          nodes[node_name] = []
+      nodes[node_name].append((row, display_name))
+      
+  # Generate HTML
+  for node_name, sensors in nodes.items():
+      sensor_id_list += f"""
+      <div class="node-section mb-5">
+          <h3 class="node-title" style="color: #0F1623; font-family: var(--sel-font-primary); font-size: 1.25rem; font-weight: 700; border-bottom: 2px solid rgba(173, 216, 255, 0.8); padding-bottom: 10px; margin-bottom: 20px;">{node_name}</h3>
+          <ul class="checkbox-grid">
+      """
+      for row, display_name in sensors:
+          sensor_id_list += (
+              f"<li><label class='styled-card' for='{row}'>"
+              f"<div class='styled-card-content'>"
+              f"<input class='styled-checkbox' id='{row}' name='sensor_list_id' type='checkbox' value='{row}'>"
+              f"<span class='styled-text'>{display_name}</span>"
+              f"</div>"
+              f"</label></li>"
+          )
+      sensor_id_list += """
+          </ul>
+      </div>
+      """
   if ty=="app":
     return render(request,'inter.html',{'sensor_id':sensor_id_list,'hidden_value':'app'})
 

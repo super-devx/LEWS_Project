@@ -93,12 +93,12 @@
                         <p class="section-description">Choose the specific sensor IDs you want to visualize</p>
                     </div>
 
-                    <div class="checkbox-grid">
+                    <div class="sensors-container">
                         {% autoescape off %}
                         {% if sensor_id %}
                             {{ sensor_id }}
                         {% else %}
-                            <div class="styled-card" style="grid-column: 1 / -1; justify-content: center; background: rgba(255, 107, 53, 0.1); border-color: rgba(255, 107, 53, 0.5);">
+                            <div class="styled-card" style="justify-content: center; background: rgba(255, 107, 53, 0.1); border-color: rgba(255, 107, 53, 0.5);">
                                 <div class="styled-card-content" style="gap: 15px;">
                                     <i class="fas fa-exclamation-triangle styled-icon" style="color: #ff6b35;"></i>
                                     <span class="styled-text" style="color: #0f1623; letter-spacing: normal; text-transform: none;">No sensors found for the selected types and locations. Please go back and select a different combination.</span>

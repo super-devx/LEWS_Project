@@ -45,8 +45,23 @@ matplotlib.use('Agg')
 def no_cache(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
+        # Enforce server-side session authentication
+        if not request.session.get('is_logged_in'):
+            from django.shortcuts import redirect
+            return redirect('signin')
+            
+        # Hydrate global variables for legacy multi-worker compatibility
+        global check, name, actual_username, current_user_type
+        check = "credit"
+        if request.session.get('user_email'):
+            name = request.session.get('user_email')
+        if request.session.get('actual_username'):
+            actual_username = request.session.get('actual_username')
+        if request.session.get('current_user_type'):
+            current_user_type = request.session.get('current_user_type')
+            
         response = view_func(request, *args, **kwargs)
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'
         return response
@@ -81,7 +96,14 @@ def logout(request):
   global check, name
   check = ''
   name = ''
-  return redirect('landing')
+  request.session.flush()
+  
+  from django.shortcuts import redirect
+  response = redirect('landing')
+  response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+  response['Pragma'] = 'no-cache'
+  response['Expires'] = '0'
+  return response
   
 
 #23.10.2020
@@ -212,10 +234,12 @@ def f2():
   s1=s1+"</table>"
   return s1
   
+@no_cache
 def allow(request):
   s1=f2();
   return render(request,'allow.html',{'list':s1})
 
+@no_cache
 def insert(request):
   #print(request.POST)
   list_user=request.POST.getlist('user')
@@ -234,6 +258,7 @@ def insert(request):
   
   
 
+@no_cache
 def fetch_info(request):
   if request.method == 'POST':
     request.session['fetch_info_payload'] = {
@@ -475,6 +500,12 @@ def login_page(request):
             return render(request,'login.html',{'message':"Tenant is not activated yet. Please contact the owner."})
 
       check="credit"
+      # Secure session authentication
+      request.session['is_logged_in'] = True
+      request.session['user_email'] = result[0][1]
+      request.session['actual_username'] = result[0][0] or result[0][1]
+      request.session['current_user_type'] = result[0][2] or "USER"
+      
       # Store the actual email_id in the global 'name' variable, because the rest of the app expects it
       name = result[0][1]
       actual_username = result[0][0] or result[0][1]
@@ -799,6 +830,7 @@ def get_scientific_color(index):
   colors = ['#1f77b4', '#2E8B57', '#D62728', '#FF7F0E', '#9467BD']
   return colors[index % len(colors)]
 
+@no_cache
 def secondPartNew(request):
   if request.method == 'POST':
       request.session['second_part_payload'] = request.POST.dict()
@@ -1039,6 +1071,7 @@ def secondPartNew(request):
       
   
 
+@no_cache
 def secondPart(request):
 
   Dict = {}
@@ -1178,6 +1211,7 @@ def secondPart(request):
       'user_type': current_user_type if 'current_user_type' in globals() else 'USER'
   })
   
+@no_cache
 def download(request):
   global check, current_user_type
   
@@ -1319,6 +1353,7 @@ def team(request):
     context = {'user_name': name if check == "credit" else None}
     return render(request, 'team.html', context)
 
+@no_cache
 def monitoring_page(request):
     """Render the Monitoring Scale page"""
     global check, name
@@ -1336,6 +1371,7 @@ def monitoring_page(request):
     return render(request, 'monitoring.html', context)
 
 
+@no_cache
 def profile_view(request):
     global check, name, connection, cursor
     try:
@@ -1402,6 +1438,7 @@ def profile_view(request):
     return render(request, 'profile.html', context)
 
 
+@no_cache
 def update_profile(request):
     global check, name, connection, cursor
     try:

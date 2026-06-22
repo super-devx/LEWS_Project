@@ -26,6 +26,13 @@
         initLazyLoading();
         initNotifications();
         initCharts();
+        
+        // BFCache buster: Reload page if restored from browser history to ensure auth checks run
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
     });
 
     // ========================================================================

@@ -40,7 +40,8 @@
             }
             return cookieValue;
         }
-        const csrftoken = getCookie('csrftoken');
+        // Use Django's template tag directly to guarantee token presence even if HttpOnly is enabled
+        const csrftoken = "{{ csrf_token }}";
     </script>
 </head>
 <body>

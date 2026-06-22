@@ -21,12 +21,22 @@ def get_sensor_data(sensor_id, from_format, to_format):
     cursor.execute(query)
     records = cursor.fetchall()
     
+    import logging
     # Return as DataFrame
     df = pd.DataFrame(records, columns=['receive_time', 'sensor_value'])
     if not df.empty:
-        df['receive_time'] = pd.to_datetime(df['receive_time'])
+        df['receive_time'] = pd.to_datetime(df['receive_time'], errors='coerce')
         df['sensor_value'] = pd.to_numeric(df['sensor_value'], errors='coerce')
-        df = df.dropna(subset=['sensor_value'])
+        
+        # Drop rows where either timestamp or value is invalid/null
+        # This prevents NotImplementedError during time-weighted interpolation later
+        valid_rows_before = len(df)
+        df = df.dropna(subset=['receive_time', 'sensor_value'])
+        dropped_rows = valid_rows_before - len(df)
+        
+        if dropped_rows > 0:
+            logging.warning(f"Sensor {sensor_id}: Dropped {dropped_rows} rows due to NULL or invalid receive_time/sensor_value records.")
+            
     return df
 
 def analyze_cross_correlation(sensor_a, sensor_b, from_format, to_format):
@@ -99,8 +109,10 @@ def analyze_cross_correlation(sensor_a, sensor_b, from_format, to_format):
         values_a = df_merged['sensor_value_a'].tolist()
         values_b = df_merged['sensor_value_b'].tolist()
     except Exception as e:
+        import traceback
         import logging
-        logging.error(f"Cross-correlation error: {str(e)}")
+        error_trace = traceback.format_exc()
+        logging.error(f"Cross-correlation error during execution:\n{error_trace}")
         return {'error': 'Unable to perform cross-correlation analysis. Please verify that both sensors contain valid time-series data.'}
     
     return {

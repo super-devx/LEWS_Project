@@ -268,19 +268,20 @@
             );
 
             // Get current date and time if not provided
-            {% if not current_date %}
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            const timeStr = now.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            $('.footer-info span').text('Generated on ' + dateStr + ' at ' + timeStr);
-            {% endif %}
+            var hasCurrentDate = "{{ current_date|default:'' }}";
+            if (!hasCurrentDate) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                const timeStr = now.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                $('.footer-info span').text('Generated on ' + dateStr + ' at ' + timeStr);
+            }
         });
     </script>
 

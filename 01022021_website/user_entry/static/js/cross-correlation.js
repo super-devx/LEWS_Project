@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Perform AJAX request
             fetch(analyzeUrl, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken

@@ -2,16 +2,14 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 import json
 
-from login import views
+from login.views import no_cache
 from login.services.cross_correlation_service import analyze_cross_correlation
 
+@no_cache
 def cross_correlation_page(request):
     """Render the Cross-Correlation Analysis page"""
-    try:
-        is_logged_in = (getattr(views, 'check', None) == "credit")
-    except Exception:
-        is_logged_in = False
-        
+    is_logged_in = request.session.get('is_logged_in', False)
+
     if not is_logged_in:
         return redirect('signin')
 
@@ -19,18 +17,15 @@ def cross_correlation_page(request):
     sensors = request.session.get('cc_sensors', [])
     
     context = {
-        'user_name': getattr(views, 'name', None) if is_logged_in else None,
+        'user_name': request.session.get('user_email') if is_logged_in else None,
         'sensors': sensors,
     }
     return render(request, 'cross-correlation.html', context)
 
 def cross_correlation_analyze(request):
     """API endpoint to handle AJAX request for analysis"""
-    try:
-        is_logged_in = (getattr(views, 'check', None) == "credit")
-    except Exception:
-        is_logged_in = False
-        
+    is_logged_in = request.session.get('is_logged_in', False)
+
     if not is_logged_in:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 

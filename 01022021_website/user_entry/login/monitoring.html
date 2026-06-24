@@ -50,50 +50,102 @@
                         </div>
                     </div>
 
-                    <!-- Circular Gauge Section -->
-                    <div class="meter-container">
-                        <!-- Radar Beacon -->
-                        <div class="radar-beacon" id="radar-beacon">
-                            <div class="beacon-ring" id="beacon-ring-1"></div>
-                            <div class="beacon-ring" id="beacon-ring-2" style="animation-delay: 1s;"></div>
-                            <i class="fas fa-satellite-dish"></i>
+                    <!-- Gauges Section -->
+                    <div class="gauges-wrapper">
+                        <!-- Landslide Circular Gauge Section -->
+                        <div class="meter-container">
+                            <div class="gauge-title" style="color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);"><i class="fas fa-mountain me-2"></i> LANDSLIDE RISK ANALYSIS</div>
+                            <!-- Radar Beacon -->
+                            <div class="radar-beacon" id="radar-beacon">
+                                <div class="beacon-ring" id="beacon-ring-1"></div>
+                                <div class="beacon-ring" id="beacon-ring-2" style="animation-delay: 1s;"></div>
+                                <i class="fas fa-satellite-dish"></i>
+                            </div>
+
+                            <!-- SVG Gauge -->
+                            <svg class="gauge-svg" viewBox="0 0 400 200">
+                                <!-- Definitions for Gradients -->
+                                <defs>
+                                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#4ade80" />
+                                        <stop offset="33%" stop-color="#facc15" />
+                                        <stop offset="66%" stop-color="#fb923c" />
+                                        <stop offset="100%" stop-color="#ef4444" />
+                                    </linearGradient>
+                                </defs>
+                                
+                                <!-- Background Arc -->
+                                <path class="gauge-bg" d="M 20 200 A 180 180 0 0 1 380 200" />
+                                
+                                <!-- Filled Arc -->
+                                <path class="gauge-fill" id="gauge-fill" d="M 20 200 A 180 180 0 0 1 380 200" stroke="url(#gaugeGradient)" />
+                                
+                                <!-- Needle -->
+                                <g class="gauge-needle" id="gauge-needle">
+                                    <path class="needle-path" d="M 195 200 L 200 40 L 205 200 Z" />
+                                    <circle class="needle-center" cx="200" cy="200" r="10" />
+                                </g>
+                            </svg>
+
+                            <!-- Labels -->
+                            <div class="gauge-labels">
+                                <span class="g-label safe">0 (Safe)</span>
+                                <span class="g-label danger">100 (Critical)</span>
+                            </div>
+
+                            <!-- Score Display -->
+                            <div class="meter-score-display">
+                                <div class="score-value" id="score-value">0</div>
+                                <div class="score-status" id="score-status">CALCULATING...</div>
+                            </div>
                         </div>
 
-                        <!-- SVG Gauge -->
-                        <svg class="gauge-svg" viewBox="0 0 400 200">
-                            <!-- Definitions for Gradients -->
-                            <defs>
-                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="#4ade80" />
-                                    <stop offset="33%" stop-color="#facc15" />
-                                    <stop offset="66%" stop-color="#fb923c" />
-                                    <stop offset="100%" stop-color="#ef4444" />
-                                </linearGradient>
-                            </defs>
-                            
-                            <!-- Background Arc -->
-                            <path class="gauge-bg" d="M 20 200 A 180 180 0 0 1 380 200" />
-                            
-                            <!-- Filled Arc -->
-                            <path class="gauge-fill" id="gauge-fill" d="M 20 200 A 180 180 0 0 1 380 200" stroke="url(#gaugeGradient)" />
-                            
-                            <!-- Needle -->
-                            <g class="gauge-needle" id="gauge-needle">
-                                <path class="needle-path" d="M 195 200 L 200 40 L 205 200 Z" />
-                                <circle class="needle-center" cx="200" cy="200" r="10" />
-                            </g>
-                        </svg>
+                        <!-- Rainfall Circular Gauge Section -->
+                        <div class="meter-container">
+                            <div class="gauge-title" style="color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.3);"><i class="fas fa-cloud-showers-heavy me-2"></i> RAINFALL ANALYSIS</div>
+                            <!-- Radar Beacon -->
+                            <div class="radar-beacon" id="rainfall-radar-beacon">
+                                <div class="beacon-ring rainfall-beacon-ring" id="rainfall-beacon-ring-1"></div>
+                                <div class="beacon-ring rainfall-beacon-ring" id="rainfall-beacon-ring-2" style="animation-delay: 1s;"></div>
+                                <i class="fas fa-cloud-showers-water"></i>
+                            </div>
 
-                        <!-- Labels -->
-                        <div class="gauge-labels">
-                            <span class="g-label safe">0 (Safe)</span>
-                            <span class="g-label danger">100 (Critical)</span>
-                        </div>
+                            <!-- SVG Gauge -->
+                            <svg class="gauge-svg" viewBox="0 0 400 200">
+                                <!-- Definitions for Gradients -->
+                                <defs>
+                                    <linearGradient id="rainfallGaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#4ade80" />
+                                        <stop offset="33%" stop-color="#facc15" />
+                                        <stop offset="66%" stop-color="#fb923c" />
+                                        <stop offset="100%" stop-color="#ef4444" />
+                                    </linearGradient>
+                                </defs>
+                                
+                                <!-- Background Arc -->
+                                <path class="gauge-bg" d="M 20 200 A 180 180 0 0 1 380 200" />
+                                
+                                <!-- Filled Arc -->
+                                <path class="gauge-fill" id="rainfall-gauge-fill" d="M 20 200 A 180 180 0 0 1 380 200" stroke="url(#rainfallGaugeGradient)" />
+                                
+                                <!-- Needle -->
+                                <g class="gauge-needle" id="rainfall-gauge-needle">
+                                    <path class="needle-path" d="M 195 200 L 200 40 L 205 200 Z" />
+                                    <circle class="needle-center" cx="200" cy="200" r="10" />
+                                </g>
+                            </svg>
 
-                        <!-- Score Display -->
-                        <div class="meter-score-display">
-                            <div class="score-value" id="score-value">0</div>
-                            <div class="score-status" id="score-status">CALCULATING...</div>
+                            <!-- Labels -->
+                            <div class="gauge-labels">
+                                <span class="g-label safe">0 mm</span>
+                                <span class="g-label danger">120+ mm</span>
+                            </div>
+
+                            <!-- Score Display -->
+                            <div class="meter-score-display">
+                                <div class="score-value"><span id="rainfall-score-value">0</span><span style="font-size: 1.2rem; margin-left: 5px; color: #94a3b8;" id="rainfall-score-unit">mm</span></div>
+                                <div class="score-status" id="rainfall-score-status">FETCHING...</div>
+                            </div>
                         </div>
                     </div>
 
@@ -163,6 +215,13 @@
                             </ul>
                         </div>
                     </div>
+
+                    <!-- Perform Analysis Action -->
+                    <div class="text-center mt-4 mb-2" style="position: relative; z-index: 10;">
+                        <a href="{% url 'analysis' %}" class="btn btn-primary" style="background-color: #ff6b35; border-color: #ff6b35; padding: 8px 24px; font-size: 1rem; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Perform Analysis <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -176,9 +235,12 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{% static 'js/nav.js' %}"></script>
     <script src="{% static 'js/interactions.js' %}"></script>
+    <script src="{% static 'js/back-navigation.js' %}"></script>
 
     <script type="module">
         import { getRiskScore, STATUS_RANGES } from "{% static 'js/riskEngine.js' %}";
+        import { getRainfallData } from "{% static 'js/services/rainfallProvider.js' %}";
+        import { updateRainfallUI } from "{% static 'js/rainfallEngine.js' %}";
 
         function updateTimestamp() {
             const now = new Date();
@@ -284,11 +346,24 @@
         // Update timestamp every second
         setInterval(updateTimestamp, 1000);
         
-        // Let the page render, then trigger animation
+        async function fetchAndUpdateRainfall() {
+            try {
+                const data = await getRainfallData();
+                updateRainfallUI(data);
+            } catch (error) {
+                console.error("Rainfall fetch error:", error);
+            }
+        }
+        
+        // Let the page render, then trigger animations
         setTimeout(() => {
             const prediction = getRiskScore();
             updateUIWithRiskScore(prediction);
+            fetchAndUpdateRainfall();
         }, 300);
+        
+        // Auto-refresh rainfall periodically (e.g. every 5 seconds for live demo)
+        setInterval(fetchAndUpdateRainfall, 5000);
     </script>
 </body>
 </html>

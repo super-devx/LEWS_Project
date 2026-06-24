@@ -163,6 +163,13 @@
                             </ul>
                         </div>
                     </div>
+
+                    <!-- Perform Analysis Action -->
+                    <div class="text-center mt-4 mb-2" style="position: relative; z-index: 10;">
+                        <a href="{% url 'analysis' %}" class="btn btn-primary" style="background-color: #ff6b35; border-color: #ff6b35; padding: 8px 24px; font-size: 1rem; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Perform Analysis <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -176,6 +183,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{% static 'js/nav.js' %}"></script>
     <script src="{% static 'js/interactions.js' %}"></script>
+    <script src="{% static 'js/back-navigation.js' %}"></script>
 
     <script type="module">
         import { getRiskScore, STATUS_RANGES } from "{% static 'js/riskEngine.js' %}";

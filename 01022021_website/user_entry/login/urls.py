@@ -3,14 +3,15 @@ from django.conf.urls import url
 from . import views
 from . import cross_correlation_views
 urlpatterns = [
-    path('login', views.home, name=''),
+    path('login', views.monitoring_page, name=''),
     path('', views.index, name='landing'),
     path('regis_page', views.registration, name=''),
     path('regis.html', views.login_form, name='login_form'),
-    path('home', views.home, name='home'),
+    path('home', views.monitoring_page, name='home'),
+    path('analysis', views.home, name='analysis'),
     path('monitoring', views.monitoring_page, name='monitoring'),
     path('login_page', views.login_page, name=''),
-    path('home.html', views.home, name=''),
+    path('home.html', views.monitoring_page, name=''),
     path('signin', views.login_form, name='signin'),
     path('register', views.register_form, name='register_form'),
     path('fetch_info',views.fetch_info, name='fetch_info'),

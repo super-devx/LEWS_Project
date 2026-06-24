@@ -241,6 +241,7 @@
         import { getRiskScore, STATUS_RANGES } from "{% static 'js/riskEngine.js' %}";
         import { getRainfallData } from "{% static 'js/services/rainfallProvider.js' %}";
         import { updateRainfallUI } from "{% static 'js/rainfallEngine.js' %}";
+        import { getActiveLocation } from "{% static 'js/utils/locationResolver.js' %}";
 
         function updateTimestamp() {
             const now = new Date();
@@ -348,8 +349,12 @@
         
         async function fetchAndUpdateRainfall() {
             try {
-                const data = await getRainfallData();
+                const locationId = getActiveLocation();
+                const data = await getRainfallData(locationId);
                 updateRainfallUI(data);
+                
+                // Optional: Update title with location if needed, currently kept purely data-driven
+                // e.g. document.querySelector('.gauge-title').innerHTML = `RAINFALL ANALYSIS (${data.locationName})`;
             } catch (error) {
                 console.error("Rainfall fetch error:", error);
             }

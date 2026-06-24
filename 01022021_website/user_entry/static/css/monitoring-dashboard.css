@@ -95,20 +95,50 @@
     gap: 8px;
 }
 
+/* Flexbox Wrapper for Multiple Gauges */
+.gauges-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    justify-items: center;
+    align-items: end;
+    margin-bottom: 4rem;
+    position: relative;
+}
+
+.gauges-wrapper::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    bottom: -20px;
+    left: 50%;
+    width: 0;
+    border-left: 2px dashed rgba(255, 255, 255, 0.4);
+    transform: translateX(-50%);
+}
+
 /* Circular Gauge Meter */
 .meter-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-bottom: 4rem;
     position: relative;
-    height: 220px;
+    height: 200px;
+    width: 320px;
+}
+
+.gauge-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 3rem;
+    letter-spacing: 1px;
 }
 
 .gauge-svg {
-    width: 400px;
-    height: 200px;
+    width: 320px;
+    height: 160px;
     overflow: visible;
 }
 
@@ -130,8 +160,8 @@
 
 .gauge-labels {
     position: absolute;
-    width: 400px;
-    height: 200px;
+    width: 320px;
+    height: 160px;
     top: 0;
     pointer-events: none;
 }
@@ -168,7 +198,7 @@
 }
 
 .score-value {
-    font-size: 3.5rem;
+    font-size: 2.8rem;
     font-weight: 700;
     line-height: 1;
     margin-bottom: 5px;
@@ -177,9 +207,9 @@
 }
 
 .score-status {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-transform: uppercase;
     transition: color 0.5s ease;
 }
@@ -341,8 +371,22 @@
     .gauge-needle {
         transform-origin: 150px 150px;
     }
+    .gauges-wrapper {
+        grid-template-columns: 1fr;
+        gap: 4rem;
+        margin-bottom: 2rem;
+    }
+    .gauges-wrapper::after {
+        display: none;
+    }
     .meter-container {
         height: 170px;
+        width: 300px;
+        margin-bottom: 2rem;
+    }
+    .gauge-title {
+        font-size: 1rem;
+        margin-bottom: 2rem;
     }
     .score-value {
         font-size: 2.8rem;

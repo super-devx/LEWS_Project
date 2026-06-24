@@ -355,6 +355,8 @@
                 
                 // Optional: Update title with location if needed, currently kept purely data-driven
                 // e.g. document.querySelector('.gauge-title').innerHTML = `RAINFALL ANALYSIS (${data.locationName})`;
+                const data = await getRainfallData();
+                updateRainfallUI(data);
             } catch (error) {
                 console.error("Rainfall fetch error:", error);
             }

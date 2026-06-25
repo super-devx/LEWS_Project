@@ -76,13 +76,17 @@ def analyze_cross_correlation(sensor_a, sensor_b, from_format, to_format):
             
         # Attempt Pearson correlation coefficient
         corr = None
-        if df_merged['sensor_value_a'].nunique() > 1 and df_merged['sensor_value_b'].nunique() > 1:
+        has_variance = df_merged['sensor_value_a'].nunique() > 1 and df_merged['sensor_value_b'].nunique() > 1
+        
+        if has_variance:
             corr = df_merged['sensor_value_a'].corr(df_merged['sensor_value_b'], method='pearson')
             
-        # Fallback to Spearman if Pearson fails or returns NaN
-        if pd.isna(corr):
-            logging.info("Pearson correlation failed or returned NaN. Attempting Spearman fallback.")
-            corr = df_merged['sensor_value_a'].corr(df_merged['sensor_value_b'], method='spearman')
+            # Fallback to Spearman if Pearson fails or returns NaN
+            if pd.isna(corr):
+                logging.info("Pearson correlation failed or returned NaN. Attempting Spearman fallback.")
+                corr = df_merged['sensor_value_a'].corr(df_merged['sensor_value_b'], method='spearman')
+        else:
+            logging.info("Skipping correlation calculation because one or both sensors have constant data.")
             
         # Format interpretation
         interpretation = "No Significant Correlation"

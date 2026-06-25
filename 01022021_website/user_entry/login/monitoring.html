@@ -352,11 +352,14 @@
                 const locationId = getActiveLocation();
                 const data = await getRainfallData(locationId);
                 updateRainfallUI(data);
+<<<<<<< HEAD
+=======
                 
                 // Optional: Update title with location if needed, currently kept purely data-driven
                 // e.g. document.querySelector('.gauge-title').innerHTML = `RAINFALL ANALYSIS (${data.locationName})`;
                 const data = await getRainfallData();
                 updateRainfallUI(data);
+>>>>>>> c31147dc23a90ffb9e34a2ca777601b519823d03
             } catch (error) {
                 console.error("Rainfall fetch error:", error);
             }
